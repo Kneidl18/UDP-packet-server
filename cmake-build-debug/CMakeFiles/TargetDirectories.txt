@@ -1,3 +1,0 @@
-/Users/andreas/Documents/Studium/2 SS24/NVS PS SS24/PP/cmake-build-debug/CMakeFiles/PP.dir
-/Users/andreas/Documents/Studium/2 SS24/NVS PS SS24/PP/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/andreas/Documents/Studium/2 SS24/NVS PS SS24/PP/cmake-build-debug/CMakeFiles/rebuild_cache.dir
