@@ -1,7 +1,7 @@
 # This is a small and simple project to work with UDP
 
 The goal is to create simple packages and send them over UDP. First step is
-to just check correctness of the packets using a MD5 checksum at the end of
+to just check correctness of the packets using a java.MD5 checksum at the end of
 the packet transmission.
 
 ### Aufbau Pakete:
@@ -26,6 +26,6 @@ Packet {
 Packet {
     Transmission id (16),
     Sequence Number (32),
-    MD5 (128)
+    java.MD5 (128)
 }
 ```
