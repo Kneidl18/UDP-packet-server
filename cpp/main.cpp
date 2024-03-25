@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <fstream>
+#include <print>
 
 #include "SocketHelper.h"
 
@@ -69,13 +70,13 @@ size_t loadData(uint8_t **data, std::string filePath){
 
     size_t count = 0;
 
-    std::cout << "reading file content: ";
+    // std::cout << "reading file content: ";
     if (file.is_open()){
         while (file){
             // load the next character, print it and save it to the data[]
             uint8_t nextChar = file.get();
-            std::cout << " " << nextChar << ":";
-            std::cout << std::hex << (int) nextChar;
+      //       std::cout << " " << nextChar << ":";
+        //     std::cout << std::hex << (int) nextChar;
             (*data + count++)[0] = nextChar;
         }
     }
@@ -86,7 +87,7 @@ size_t loadData(uint8_t **data, std::string filePath){
         exit(1);
     }
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
     file.close();
     return dataLen;
 }
@@ -97,7 +98,7 @@ size_t loadData(uint8_t **data, std::string filePath){
  * @param argv arguments as char[]
  * @return 1 if the command is listen, 2 if the command is send
  */
-int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8_t *ipAddr){
+int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8_t *ipAddr, std::string *outputDirPath){
     for (int i = 0; i < argc; i++){
         if (!strcmp("--listen", argv[i])) {
             // the command is listening
@@ -112,6 +113,17 @@ int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8
             }
 
             return 2;
+        }
+        else if (!strcmp("-o", argv[i])){
+            // the command is sending
+            *outputDirPath += argv[i + 1];
+            while (!strcmp("--send", argv[++i]) && i < argc){
+                *outputDirPath += " ";
+                *outputDirPath += argv[i + 1];
+            }
+
+            std::cout << "output filepath: " << *outputDirPath << std::endl;
+            i--;
         }
         else if (!strcmp("-p", argv[i])){
             // specified port
@@ -167,14 +179,18 @@ int main(int argc, char *argv[]) {
     }
 
     std::string filePath;
+    std::string outputDirPath;
     uint8_t dstIpAddr[4] = {0, 0, 0, 0};
-    size_t port;
-    int runCommand = parseArgs(argc, argv, &filePath, &port, dstIpAddr);
+    size_t port = 0;
+    int runCommand = parseArgs(argc, argv, &filePath, &port, dstIpAddr, &outputDirPath);
 
     auto *sh = new SocketHelper();
     bool run = true;
 
     if (runCommand == 0 || runCommand == 1) {
+        if (port != 0)
+            sh->setIpSettings(dstIpAddr, port);
+
         std::thread socketThreadListen(&SocketHelper::run, sh, &run, SLAVE);
 
         std::string command;
@@ -200,7 +216,8 @@ int main(int argc, char *argv[]) {
         }
 
         sh->sendMsg(data, dataLen, (uint8_t *) fileName, strlen(fileName));
-        sh->setIpSettings(dstIpAddr, port);
+        if (port != 0)
+            sh->setIpSettings(dstIpAddr, port);
 
         std::thread socketThreadSending(&SocketHelper::run, sh, &run, MASTER);
 

@@ -9,13 +9,30 @@
 #include <random>
 #include <cmath>
 #include <arpa/inet.h>
+#include <print>
+#include <sys/fcntl.h>
 
 #define MAX_DATA_LEN (65527.0 - sizeof(Packet))
-#define PORT_NUMBER 10000
+#define PORT_NUMBER 8080
+#define BUFFER_LEN 1024
 
 std::random_device rd; // obtain a random number from hardware
 std::mt19937 gen(rd()); // seed the generator
 std::uniform_int_distribution<> distr(0, pow(2, 32)); // define the range
+
+
+/**
+ * set ip address and port for specific dst port/ip addr
+ * @param dstIpAddr
+ * @param port
+ */
+void SocketHelper::setIpSettings(uint8_t *dstIpAddr, size_t port){
+    this->dstIpAddr = new sockaddr_in;
+    this->dstIpAddr->sin_family = AF_INET;
+    this->dstIpAddr->sin_port = htons(port);
+
+    memcpy(&this->dstIpAddr->sin_addr, dstIpAddr, 4);
+}
 
 /**
  * fills the referenced packetHeader with the transmissionId and
@@ -79,6 +96,9 @@ void SocketHelper::increaseSequenceNumber(PacketHeader *header) {
 void SocketHelper::calcChecksum (EndPacket *endPacket, uint8_t *data, size_t dataLen, uint8_t *fileName,
                                  size_t fileNameLen) {
 
+    for (auto &i : endPacket->checksum) {
+        i = 0;
+    }
 }
 
 /**
@@ -89,6 +109,16 @@ void SocketHelper::calcChecksum (EndPacket *endPacket, uint8_t *data, size_t dat
 bool SocketHelper::pushToPacketQueue(packetVariant packet) {
     packetQueue.push(packet);
     return packetQueue.back() == packet;
+}
+
+/**
+ * push an incoming msg to the incoming msg queue to then process it
+ * @param buffer
+ * @param len
+ * @return true if success, false if fail
+ */
+bool SocketHelper::pushToIncommingQueue(char *buffer, ssize_t len){
+
 }
 
 // TODO: fileNameLen 1-256 byte!!
@@ -104,7 +134,7 @@ bool SocketHelper::pushToPacketQueue(packetVariant packet) {
 bool SocketHelper::sendMsg (uint8_t *data, size_t dataLen, uint8_t *fileName, size_t fileNameLen){
     // calculate the number of packets necessary
     int n = ceil(dataLen / MAX_DATA_LEN);
-    std::cout << "number of packets for this message is " << n << std::endl;
+    // std::cout << "number of packets for this message is " << n << std::endl;
 
     // create start packet
     auto *packetHeader = new PacketHeader;
@@ -131,6 +161,7 @@ bool SocketHelper::sendMsg (uint8_t *data, size_t dataLen, uint8_t *fileName, si
     auto *endPacket = new EndPacket;
     uint8_t checksum[16];
     fillEndPacket(endPacket, packetHeader, checksum);
+    calcChecksum(endPacket, data, dataLen, fileName, fileNameLen);
     pushToPacketQueue(endPacket);
 
     msgSend = false;
@@ -141,110 +172,161 @@ bool SocketHelper::msgOut(){
     return msgSend;
 }
 
-void SocketHelper::createSocket(int portNum, int *socket1, int *socket2) {
+void SocketHelper::createSocketSend(int portNum, int *socket1) {
+    // creating socket
+    *socket1 = socket(AF_INET, SOCK_DGRAM, 0);
+    int con;
+
+    // specifying address
+    sockaddr_in serverAddress{};
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(portNum);
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+    // sending connection request
+    if (dstIpAddr == nullptr)
+        con = connect(*socket1, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
+    else {
+        con = connect(*socket1, (struct sockaddr *) dstIpAddr, sizeof(sockaddr_in));
+    }
+
+    if (con < 0){
+        std::cerr << "error connecting to socket" << std::endl;
+        exit(1);
+    }
+}
+
+void SocketHelper::createSocketRecv(int portNum, int *socket1) {
     // create a socket
     // socket(int domain, int type, int protocol)
-    *socket1 = socket(AF_INET, SOCK_STREAM, 0);
+    *socket1 = socket(AF_INET, SOCK_DGRAM, 0);
     if (*socket1 < 0) {
-        std::cerr << "error opening socket";
+        std::cerr << "error opening socket" << std::endl;
         exit(1);
     }
 
     // clear address structure
     bzero((char *) &serv_addr, sizeof(serv_addr));
 
-    /* setup the host_addr structure for use in bind call */
-    // server byte order
     serv_addr.sin_family = AF_INET;
-
-    // automatically be filled with current host's IP address
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-
-    // convert short integer value for port must be converted into network byte order
     serv_addr.sin_port = htons(portNum);
 
-    // bind(int fd, struct sockaddr *local_addr, socklen_t addr_length)
-    // bind() passes file descriptor, the address structure,
-    // and the length of the address structure
-    // This bind() call will bind  the socket to the current IP address on port, portno
-    if (bind(*socket1, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        std::cerr << "ERROR on binding";
-        exit(1);
+    if (dstIpAddr == nullptr) {
+        if (bind(*socket1, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+            std::cerr << "ERROR on binding" << std::endl;
+            exit(1);
+        }
+        std::cout << "listening on: " << inet_ntoa(serv_addr.sin_addr) << " port " << ntohs(serv_addr.sin_port) << std::endl;
+    }
+    else{
+        if (bind (*socket1, (struct sockaddr *) dstIpAddr, sizeof(serv_addr)) < 0){
+            std::cerr << "ERROR on binding" << std::endl;
+            exit(1);
+        }
+        std::cout << "listening on: " << inet_ntoa(dstIpAddr->sin_addr) << " port " << ntohs(dstIpAddr->sin_port) << std::endl;
     }
 
-    // This listen() call tells the socket to listen to the incoming connections.
-    // The listen() function places all incoming connection into a backlog queue
-    // until accept() call accepts the connection.
-    // Here, we set the maximum size for the backlog queue to 5.
-    listen(*socket1,5);
+    listen(*socket1, 10);
 
-    // The accept() call actually accepts an incoming connection
-    size_t clilen = sizeof(cli_addr);
-
-    // This accept() function will write the connecting client's address info
-    // into the the address structure and the size of that structure is clilen.
-    // The accept() returns a new socket file descriptor for the accepted connection.
-    // So, the original socket file descriptor can continue to be used
-    // for accepting new connections while the new socker file descriptor is used for
-    // communicating with the connected client.
-    *socket2 = accept(*socket1,
-                           (struct sockaddr *) &cli_addr, reinterpret_cast<socklen_t *>(&clilen));
-    if (*socket2 < 0) {
-        std::cerr << "ERROR on accept";
-        exit(1);
-    }
-
-    std::cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << " port " << ntohs(cli_addr.sin_port);
-    std::cout << std::endl;
+    fcntl(*socket1, F_SETFL, O_NONBLOCK);
 }
 
 void SocketHelper::runMaster(){
-    int socket1, socket2;
-    createSocket(PORT_NUMBER, &socket1, &socket2);
+    int socket1;
+    createSocketSend(PORT_NUMBER, &socket1);
+
+    if (dstIpAddr != nullptr) {
+        std::cout << "sending packet to: addr->" << inet_ntoa(dstIpAddr->sin_addr);
+        std::cout << " port->" << ntohs(dstIpAddr->sin_port) << std::endl;
+    }
 
     while (!packetQueue.empty()){
         auto elem = packetQueue.front();
         packetQueue.pop();
-        std::visit([&socket1, &socket2](auto&& arg) {
+        std::visit([&socket1, this](auto&& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, Packet *>) {
                 std::cout << *arg;
-                send(socket2, reinterpret_cast<void *> (arg), sizeof(Packet), 0);
+
+                // send the msg
+                send(socket1, reinterpret_cast<void *> (arg), sizeof(Packet), 0);
+
+                Packet *p = reinterpret_cast<Packet *> (arg);
+                // delete p->data;
+                delete p;
             }
             else if constexpr (std::is_same_v<T, StartPacket *>){
                 std::cout << *arg;
-                send(socket2, reinterpret_cast<void *> (arg), sizeof(StartPacket), 0);
+
+                // send the msg
+                send(socket1, reinterpret_cast<void *> (arg), sizeof(Packet), 0);
+
+                StartPacket *p = reinterpret_cast<StartPacket *> (arg);
+                delete p->fileName;
+                delete p;
             }
             else if constexpr (std::is_same_v<T, EndPacket *>){
                 std::cout << *arg;
-                send(socket2, reinterpret_cast<void *> (arg), sizeof(EndPacket), 0);
+
+                // send the msg
+                send(socket1, reinterpret_cast<void *> (arg), sizeof(Packet), 0);
+
+                EndPacket *p = reinterpret_cast<EndPacket *> (arg);
+                delete p;
             }
             else
                 std::cout << "unknown variance" << std::endl;
         }, elem);
-
-        // TODO: fix possible memory leak with packetHeader and data
-        // delete elem->packetHeader;
-        // delete elem->data;
-        // delete elem;
     }
 
     msgSend = true;
 }
 
-void SocketHelper::runSlave(){
+void SocketHelper::runSlave(const bool *run){
+    int socket1;
+    createSocketRecv(PORT_NUMBER, &socket1);
+    socketNum = socket1;
 
+    while (*run) {
+        char buffer[BUFFER_LEN];
+        // size_t n = read(socket2, buffer, BUFFER_LEN-1);
+        sockaddr cli_addr_sock{};
+        socklen_t cli_len = sizeof(cli_addr_sock);
+        ssize_t n = recvfrom(socket1, buffer, BUFFER_LEN - 1, 0, (struct sockaddr *) &cli_addr_sock, &cli_len);
+
+        if (n < 1) {
+            continue;
+        }
+
+        std::cout << "server: got connection from ";
+        std::cout << inet_ntoa(reinterpret_cast<sockaddr_in *> (&cli_addr_sock)->sin_addr) << " port ";
+        std::cout << ntohs(reinterpret_cast<sockaddr_in *> (&cli_addr_sock)->sin_port) << std::endl;
+
+        std::cout << "incoming msg: ";
+        for (int i = 0; i < n; i++) {
+            std::cout << std::hex << (int) buffer[i];
+        }
+        std::cout << std::endl;
+
+        // TODO: process incomming msg
+        // msg comes in multiple goes
+        // have to concatenate msges
+        pushToIncommingQueue(buffer, n);
+    }
+
+    // closing socket
+    close(socket1);
 }
 
-void SocketHelper::run(const bool *run){
+void SocketHelper::run(const bool *run, Config config){
     while (*run) {
-        switch (CONFIGURATION) {
+        switch (config) {
             case MASTER:
                 runMaster();
-                std::cout << "sending msg" << std::endl;
                 break;
             case SLAVE:
-                runSlave();
+                runSlave(run);
                 break;
             default:
                 std::cout << "server config unknown" << std::endl;
