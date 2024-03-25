@@ -54,8 +54,6 @@ public class Transmitter {
         DatagramPacket packet = new DatagramPacket(firstPaket, firstPaket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(packet);  // sende paket
 
-        // Update MD5 checksum
-        //md.update(buffer, 0, bytesRead);
 
         sequenceNumber++; // Inkrementieren der Sequenznummer für das nächste Paket
         transmissionID++;
@@ -68,7 +66,7 @@ public class Transmitter {
             totalBytesRead += bytesRead;
             transIDBytes = intToBytes(transmissionID); // wandle transmission id in byte-array
             seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
-            byte[] data = new byte[bytesRead + 8];  // größe zum übertragen + 8 bytes für transmission id & sequence number
+            byte[] data = new byte[bytesRead + 6];  // größe zum übertragen + 6 bytes für transmission id & sequence number
             System.arraycopy(transIDBytes, 0, data, 0, 2); // kopiere transmission id in data[]
             System.arraycopy(seqNumberBytes, 0, data, 2, 4); // kopiere sequence number in data[]
             System.arraycopy(buffer, 0, data, 6, bytesRead); // kopiere buffer in data[]
@@ -77,7 +75,7 @@ public class Transmitter {
             socket.send(packet);  // sende paket
 
             // Update MD5 checksum
-            //md.update(buffer, 0, bytesRead);
+            md.update(buffer, 0, bytesRead);
 
             sequenceNumber++; // Inkrementieren der Sequenznummer für das nächste Paket
             transmissionID++;
@@ -86,9 +84,13 @@ public class Transmitter {
             }
         }
 
-        // Send packet with sequence number set to -1 to indicate end of file
-        byte[] endOfFilePacket = intToBytes(Integer.MAX_VALUE);
-        DatagramPacket eofPacket = new DatagramPacket(endOfFilePacket, endOfFilePacket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
+
+        byte[] lastPacket = new byte[22]; // letztes Paket ist 22 Byte lang
+        System.arraycopy(transIDBytes, 0, lastPacket, 0, 2); // kopiere transmission id in data[]
+        System.arraycopy(seqNumberBytes, 0, lastPacket, 2, 4); // kopiere sequence number in data[]
+        System.arraycopy(md, 0, lastPacket, 6, 16);
+
+        DatagramPacket eofPacket = new DatagramPacket(lastPacket, lastPacket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(eofPacket);
 
         fileInputStream.close();
