@@ -39,16 +39,41 @@ public class Transmitter {
         int totalBytesRead = 0;
         long fileSize = new File(FILE_NAME).length();
 
+
+        //erstes Paket
+        byte[] transIDBytes = intToBytes(transmissionID); // wandle transmission id in byte-array
+        byte[] seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
+        byte[] maxSeqNumber = intToBytes(Integer.MAX_VALUE);
+        byte[] firstPaket = new byte[266];  // größe zum übertragen des ersten pakets sind 266 byte maximal
+        System.arraycopy(transIDBytes, 0, firstPaket, 0, 2); // kopiere transmission id in data[]
+        System.arraycopy(seqNumberBytes, 0, firstPaket, 2, 4); // kopiere sequence number in data[]
+        System.arraycopy(maxSeqNumber, 0, firstPaket, 6, 4); // kopiere max sequence number in data[]
+        System.arraycopy(FILE_NAME, 0, firstPaket, 10, 248); // kopiere file name in data[]
+
+
+        DatagramPacket packet = new DatagramPacket(firstPaket, firstPaket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
+        socket.send(packet);  // sende paket
+
+        // Update MD5 checksum
+        //md.update(buffer, 0, bytesRead);
+
+        sequenceNumber++; // Inkrementieren der Sequenznummer für das nächste Paket
+        transmissionID++;
+
+
+
+
+        // erstes bis n-1tes Paket
         while ((bytesRead = fileInputStream.read(buffer)) != -1) {  // daten in buffer[] lesen
             totalBytesRead += bytesRead;
-            byte[] transIDBytes = intToBytes(transmissionID); // wandle transmission id in byte-array
-            byte[] seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
+            transIDBytes = intToBytes(transmissionID); // wandle transmission id in byte-array
+            seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
             byte[] data = new byte[bytesRead + 8];  // größe zum übertragen + 8 bytes für transmission id & sequence number
-            System.arraycopy(transIDBytes, 0, data, 0, 4); // kopiere transmission id in data[]
-            System.arraycopy(seqNumberBytes, 0, data, 4, 4); // kopiere sequence number in data[]
-            System.arraycopy(buffer, 0, data, 8, bytesRead); // kopiere buffer in data[]
+            System.arraycopy(transIDBytes, 0, data, 0, 2); // kopiere transmission id in data[]
+            System.arraycopy(seqNumberBytes, 0, data, 2, 4); // kopiere sequence number in data[]
+            System.arraycopy(buffer, 0, data, 6, bytesRead); // kopiere buffer in data[]
 
-            DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
+            packet = new DatagramPacket(data, data.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
             socket.send(packet);  // sende paket
 
             // Update MD5 checksum
