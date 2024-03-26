@@ -24,44 +24,39 @@ private:
     std::vector<IncomingPacket *> incomingPacketList;
     std::string outputDir;
 
-    void fillPacketHeader(PacketHeader *packetHeader, uint16_t tId, uint32_t seqNum);
-    void fillPacket(Packet *packet, PacketHeader *packetHeader, uint8_t *data, size_t dataLen);
-    void fillStartPacket(StartPacket *packet, PacketHeader *packetHeader, size_t n, uint8_t *fileName, size_t nameLen);
-    void fillEndPacket(EndPacket *packet, PacketHeader *packetHeader, uint8_t *checksum);
+    static void fillPacketHeader(PacketHeader *packetHeader, uint16_t tId, uint32_t seqNum);
+    static void fillPacket(Packet *packet, PacketHeader *packetHeader, uint8_t *data, size_t dataLen);
+    static void fillStartPacket(StartPacket *packet, PacketHeader *packetHeader, size_t n, uint8_t *fileName, size_t nameLen);
+    static void fillEndPacket(EndPacket *packet, PacketHeader *packetHeader, const uint8_t *checksum);
+    static void increaseSequenceNumber(PacketHeader *header);
 
-    void calcChecksum(EndPacket *endPacket, uint8_t *data, size_t dataLen, uint8_t *fileName,
+    static void calcChecksum(EndPacket *endPacket, uint8_t *data, size_t dataLen, uint8_t *fileName,
                       size_t fileNameLen);
+    static bool checkCorrectnessOfPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket);
 
     bool pushToPacketQueue(packetVariant packet);
+    bool pushToIncomingQueue(char *buffer, ssize_t len);
 
-    void createSocketRecv(int portNum, int *socket1);
-    void createSocketSend(int portNum, int *socket1);
+    void createSocketRecv(int *socket1);
+    void createSocketSend(int *socket1);
 
     void runMaster();
     void runSlave(const bool *run);
 
-    void increaseSequenceNumber(PacketHeader *header);
+    void processIncomingMsg();
+
+    static void sortPackets(Packet *packets, size_t n);
+
+    bool savePacketsToFile(StartPacket *startPacket, Packet *packets);
 
 public:
-    int socketNum;
-
     void run(const bool *run, Config config);
 
     bool sendMsg(uint8_t *data, size_t dataLen, uint8_t *fileName, size_t fileNameLen);
 
-    bool msgOut();
+    bool msgOut() const;
 
-    void setIpSettings(uint8_t *dstIpAddr, size_t port);
-
-    bool pushToIncomingQueue(char *buffer, ssize_t len);
-
-    void processIncomingMsg();
-
-    void sortPackets(Packet *packets, size_t n);
-
-    bool checkCorrectnessOfPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket);
-
-    bool savePacketsToFile(StartPacket *startPacket, Packet *packets);
+    void setIpSettings(uint8_t *dstIp, size_t port);
 
     void setOutputDirPath(std::string outDir);
 };
