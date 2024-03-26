@@ -11,10 +11,10 @@
 #include <arpa/inet.h>
 #include <print>
 #include <sys/fcntl.h>
+#include "md5.h"
 
 #define MAX_DATA_LEN (65527.0 - sizeof(Packet))
 #define PORT_NUMBER 8080
-#define BUFFER_LEN 1024
 
 std::random_device rd; // obtain a random number from hardware
 std::mt19937 gen(rd()); // seed the generator
@@ -96,9 +96,13 @@ void SocketHelper::increaseSequenceNumber(PacketHeader *header) {
 void SocketHelper::calcChecksum (EndPacket *endPacket, uint8_t *data, size_t dataLen, uint8_t *fileName,
                                  size_t fileNameLen) {
 
-    for (auto &i : endPacket->checksum) {
-        i = 0;
-    }
+    // std::string tmp = std::string(data, dataLen);
+    md5::md5_t md5_o;
+
+    md5_o.process(fileName, fileNameLen);
+    md5_o.process(data, dataLen);
+
+    md5_o.finish(endPacket->checksum);
 }
 
 /**
@@ -117,8 +121,14 @@ bool SocketHelper::pushToPacketQueue(packetVariant packet) {
  * @param len
  * @return true if success, false if fail
  */
-bool SocketHelper::pushToIncommingQueue(char *buffer, ssize_t len){
+bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len){
+    IncomingPacket *p = new IncomingPacket;
 
+    memcpy(p->buffer, buffer, len);
+    p->len = len;
+
+    incomingPacketQueue.push(p);
+    return true;
 }
 
 // TODO: fileNameLen 1-256 byte!!
@@ -312,7 +322,7 @@ void SocketHelper::runSlave(const bool *run){
         // TODO: process incomming msg
         // msg comes in multiple goes
         // have to concatenate msges
-        pushToIncommingQueue(buffer, n);
+        pushToIncomingQueue(buffer, n);
     }
 
     // closing socket

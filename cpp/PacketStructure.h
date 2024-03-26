@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <bitset>
 
+#define BUFFER_LEN 65527
+
 typedef struct{
     uint16_t transmissionId;
     uint32_t sequenceNumber;
@@ -30,6 +32,11 @@ typedef struct{
     PacketHeader packetHeader;
     uint8_t checksum[16];
 } EndPacket;
+
+typedef struct{
+    char buffer[BUFFER_LEN];
+    size_t len;
+} IncomingPacket;
 
 inline std::ostream& operator << (std::ostream& o, Packet& p) {
     std::bitset<16> trans(p.packetHeader.transmissionId);
@@ -60,7 +67,7 @@ inline std::ostream& operator << (std::ostream& o, StartPacket & p) {
 
     o << std::endl;
     o << "start packet: tId->" << p.packetHeader.transmissionId << "\tsNr->" << p.packetHeader.sequenceNumber;
-    o << "\tmaxSNr->" << p.sequenceNumberMax << std::endl;
+    o << "\tmaxSNr->" << p.sequenceNumberMax << "\tfileName->" << p.fileName << std::endl;
 
     /*
     o << "packet: tId->" << trans << "\tsNr->" << sequence << "\tmaxSNr->" << maxSequence;

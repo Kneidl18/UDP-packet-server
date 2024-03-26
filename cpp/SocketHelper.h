@@ -20,6 +20,7 @@ private:
     bool msgSend = true;
     struct sockaddr_in serv_addr;
     struct sockaddr_in *dstIpAddr = nullptr;
+    std::queue<IncomingPacket *> incomingPacketQueue;
 
     void fillPacketHeader(PacketHeader *packetHeader, uint16_t tId, uint32_t seqNum);
     void fillPacket(Packet *packet, PacketHeader *packetHeader, uint8_t *data, size_t dataLen);
@@ -50,7 +51,7 @@ public:
 
     void setIpSettings(uint8_t *dstIpAddr, size_t port);
 
-    bool pushToIncommingQueue(char *buffer, ssize_t len);
+    bool pushToIncomingQueue(char *buffer, ssize_t len);
 };
 
 
