@@ -42,8 +42,9 @@ inline std::ostream& operator << (std::ostream& o, Packet& p) {
     std::bitset<16> trans(p.packetHeader.transmissionId);
     std::bitset<32> sequence(p.packetHeader.sequenceNumber);
 
+
     o << "packet: tId->" << p.packetHeader.transmissionId << "\tsNr->" << p.packetHeader.sequenceNumber << "\tdata->";
-    for (auto i = 0; i < p.dataLen; i++){
+    for (auto i = 0; i < p.dataLen && i < 100; i++){
         o << p.data[i];
     }
     o << std::endl;

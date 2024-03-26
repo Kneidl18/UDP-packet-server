@@ -192,6 +192,8 @@ int main(int argc, char *argv[]) {
         if (port != 0)
             sh->setIpSettings(dstIpAddr, port);
 
+        sh->setOutputDirPath(outputDirPath);
+
         std::thread socketThreadListen(&SocketHelper::run, sh, &run, SLAVE);
 
         std::string command;

@@ -11,9 +11,10 @@
 #include <arpa/inet.h>
 #include <print>
 #include <sys/fcntl.h>
+#include <fstream>
 #include "md5.h"
 
-#define MAX_DATA_LEN (65527.0 - sizeof(Packet))
+#define MAX_DATA_LEN 5000.0
 #define PORT_NUMBER 8080
 
 std::random_device rd; // obtain a random number from hardware
@@ -32,6 +33,10 @@ void SocketHelper::setIpSettings(uint8_t *dstIpAddr, size_t port){
     this->dstIpAddr->sin_port = htons(port);
 
     memcpy(&this->dstIpAddr->sin_addr, dstIpAddr, 4);
+}
+
+void SocketHelper::setOutputDirPath (std::string outDir){
+    this->outputDir = outDir;
 }
 
 /**
@@ -105,6 +110,97 @@ void SocketHelper::calcChecksum (EndPacket *endPacket, uint8_t *data, size_t dat
     md5_o.finish(endPacket->checksum);
 }
 
+bool SocketHelper::savePacketsToFile(StartPacket *startPacket, Packet *packets) {
+    int n = startPacket->sequenceNumberMax - startPacket->packetHeader.sequenceNumber - 1;
+
+    // create output file dir from received filename and stored file path
+    std::string outFilePath = outputDir;
+    outFilePath += std::string(reinterpret_cast<char *> (startPacket->fileName));
+
+    if (!std::filesystem::exists(outputDir.c_str())) {
+        std::filesystem::create_directory(outputDir.c_str());
+    }
+
+    // don't worry about seg fault because of fileName being a uint8_t
+    // as it points to a 65000 byte char array there is always a \0 at the end
+    std::ofstream output_file(outFilePath);
+    std::ostream_iterator<std::string> output_iterator(output_file, "\n");
+
+    if (!output_file.is_open()){
+        // file couldn't be opened...
+        std::cerr << "couldn't open file to store incoming message" << std::endl;
+        return false;
+    }
+    for (int i = 0; i < n; i++){
+        for (int j = 0; j < packets[i].dataLen; j++)
+            output_file << packets[i].data[j];
+    }
+
+    return true;
+}
+
+// TODO: check correctness of searching algorithm
+/**
+ * sort the packets[] using insertion sort (should be pretty fast
+ * as the packets should be in correct order)
+ * @param packets
+ * @param n
+ * @return
+ */
+void SocketHelper::sortPackets (Packet *packets, size_t n){
+    Packet key;
+    for (int i = 1; i < n; i++){
+        int j = i - 1;
+        key = packets[i];
+        while (j >= 0 && packets[j].packetHeader.sequenceNumber > key.packetHeader.sequenceNumber) {
+            packets[j+1] = packets[j];
+            j--;
+        }
+        packets[j + 1] = key;
+    }
+}
+
+bool SocketHelper::checkCorrectnessOfPackets (StartPacket *startPacket, Packet *packets, EndPacket *endPacket){
+    uint32_t sequenceNumberEnd = startPacket->sequenceNumberMax;
+    uint32_t sequenceNumberStart = startPacket->packetHeader.sequenceNumber;
+
+    for (int i = 0; i < sequenceNumberEnd - sequenceNumberStart - 1; i++) {
+        if (packets[i].packetHeader.sequenceNumber != sequenceNumberStart + i + 1){
+            // sequence number doesn't seem to match nth element
+            std::cerr << "packets are missing" << std::endl;
+            // exit(1);
+            return false;
+        }
+    }
+
+    if (endPacket->packetHeader.sequenceNumber != sequenceNumberEnd){
+        // sequence number of the endPacket doesn't match sequenceNumberMax from Start Header
+        std::cerr << "sequence number of end packet doesnt' match sequence number written in startPacket" << std::endl;
+        // exit(1);
+        return false;
+    }
+
+    EndPacket dummy;
+    uint8_t data[(uint32_t) MAX_DATA_LEN * (sequenceNumberEnd - sequenceNumberStart - 1)];
+    size_t dataPointer = 0;
+
+    for (int i = 0; i < sequenceNumberEnd - sequenceNumberStart - 1; i++){
+        memcpy(data + dataPointer, packets[i].data, packets[i].dataLen);
+        dataPointer += packets[i].dataLen;
+    }
+
+    calcChecksum(&dummy, data, dataPointer, startPacket->fileName, startPacket->nameLen);
+
+    for (int i = 0; i < 16; i++){
+        if (dummy.checksum[i] != endPacket->checksum[i]){
+            std::cerr << "error in checksum" << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /**
  * pushes a package to the queue
  * @param packet pointer to the packet to be pushed
@@ -127,8 +223,65 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len){
     memcpy(p->buffer, buffer, len);
     p->len = len;
 
-    incomingPacketQueue.push(p);
+    incomingPacketList.push_back(p);
     return true;
+}
+
+/**
+ * concatenate incoming messages to readable packages
+ * each incoming packet is one packet of the transmission
+ * convert them one after another to a packet and search
+ * for the final packet
+ */
+void SocketHelper::processIncomingMsg(){
+    // load the first packet; calculate the amount of packets from the start packet
+    IncomingPacket *first = incomingPacketList.front();
+
+    StartPacket startPacket;
+    // copy the packetheader and the sequencenumbermax
+    memcpy(&startPacket, first, sizeof(PacketHeader) + sizeof(uint32_t));
+
+    startPacket.fileName = reinterpret_cast<uint8_t *>(&first->buffer[sizeof(uint32_t) + sizeof(PacketHeader)]);
+    startPacket.nameLen = first->len - sizeof(PacketHeader) - sizeof(uint32_t);
+
+    // calculate the amount of packets
+    int n = startPacket.sequenceNumberMax - startPacket.packetHeader.sequenceNumber;
+
+    if (incomingPacketList.size() < n + 1){
+        // apparently not all packets have yet arrived. waiting for all to arrive
+        return;
+    }
+
+    // copy all packets from the incoming vector
+    Packet packets[n - 1];
+    for (int i = 1; i < n; i++){
+        memcpy(&packets[i - 1], incomingPacketList[i], sizeof(PacketHeader));
+        packets[i - 1].data = reinterpret_cast<uint8_t *>(&incomingPacketList[i]->buffer[sizeof(PacketHeader)]);
+        packets[i - 1].dataLen = incomingPacketList[i]->len - sizeof(PacketHeader);
+    }
+    // the packets could be in wrong order
+    sortPackets(packets, n - 1);
+
+    // the nth packet is the end packet
+    EndPacket endPacket;
+    memcpy(&endPacket, incomingPacketList[n], sizeof(EndPacket));
+
+    // if the packets or the checksum doesn't match
+    if (!checkCorrectnessOfPackets(&startPacket, packets, &endPacket)){
+        std::cerr << "checksum wrong or other problem with packets, deleting and skipping" << std::endl;
+    }
+
+    std::cout << "incoming packages: " << startPacket;
+    for (auto i : packets){
+        std::cout << i;
+    }
+    std::cout << endPacket;
+
+    savePacketsToFile(&startPacket, packets);
+
+    for (int i = 0; i < n; i++) {
+        incomingPacketList.erase(incomingPacketList.begin());
+    }
 }
 
 // TODO: fileNameLen 1-256 byte!!
@@ -157,12 +310,14 @@ bool SocketHelper::sendMsg (uint8_t *data, size_t dataLen, uint8_t *fileName, si
 
     // split data into n packets with max size of 65527 byte
 
+    size_t dataLenCopy = dataLen;
     for (int i = 0; i < n; i++) {
         auto *packet = new Packet;
         memcpy(&packet->packetHeader, packetHeader, sizeof(PacketHeader));
         packet->data = data + (size_t) (i * MAX_DATA_LEN);
-        packet->dataLen = std::min(dataLen, (size_t) MAX_DATA_LEN);
+        packet->dataLen = std::min(dataLenCopy, (size_t) MAX_DATA_LEN);
 
+        dataLenCopy -= MAX_DATA_LEN;
         pushToPacketQueue(packet);
         increaseSequenceNumber(packetHeader);
     }
@@ -240,6 +395,7 @@ void SocketHelper::createSocketRecv(int portNum, int *socket1) {
     listen(*socket1, 10);
 
     fcntl(*socket1, F_SETFL, O_NONBLOCK);
+    // setsockopt (*socket1, IPPROTO_UDP, SO_RCVBUF, 65000);
 }
 
 void SocketHelper::runMaster(){
@@ -257,10 +413,25 @@ void SocketHelper::runMaster(){
         std::visit([&socket1, this](auto&& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, Packet *>) {
-                std::cout << *arg;
+                // std::cout << *arg;
 
                 // send the msg
-                send(socket1, reinterpret_cast<void *> (arg), sizeof(Packet), 0);
+                char packetAsArray[BUFFER_LEN];
+                memcpy(packetAsArray, arg, sizeof(PacketHeader));
+                for (int i = 0; i < reinterpret_cast<Packet *> (arg)->dataLen; i++){
+                    packetAsArray[i + sizeof(PacketHeader)] = reinterpret_cast<Packet *> (arg)->data[i];
+                }
+
+                int n;
+                int maxTryCount = 0;
+
+                do {
+                    n = send(socket1, packetAsArray,
+                             sizeof(PacketHeader) + reinterpret_cast<Packet *> (arg)->dataLen, 0);
+                    maxTryCount++;
+                } while (n < 0 && maxTryCount < 10);
+
+                std::cout << "packet sent " << n << " bytes" << std::endl;
 
                 Packet *p = reinterpret_cast<Packet *> (arg);
                 // delete p->data;
@@ -270,8 +441,17 @@ void SocketHelper::runMaster(){
                 std::cout << *arg;
 
                 // send the msg
-                send(socket1, reinterpret_cast<void *> (arg), sizeof(Packet), 0);
+                char packetAsArray[BUFFER_LEN];
+                // load packetheader and sequence number into buffer
+                memcpy(packetAsArray, arg, sizeof(PacketHeader) + sizeof(uint32_t));
+                for (int i = 0; i < reinterpret_cast<StartPacket *> (arg)->nameLen; i++){
+                    packetAsArray[i + sizeof(PacketHeader) + sizeof(uint32_t)] =
+                            reinterpret_cast<StartPacket *> (arg)->fileName[i];
+                }
+                int n = send(socket1, packetAsArray,
+                     sizeof(uint32_t) + sizeof(PacketHeader) + reinterpret_cast<StartPacket *> (arg)->nameLen, 0);
 
+                std::cout << "start packet sent " << n << " bytes" << std::endl;
                 StartPacket *p = reinterpret_cast<StartPacket *> (arg);
                 delete p->fileName;
                 delete p;
@@ -280,7 +460,10 @@ void SocketHelper::runMaster(){
                 std::cout << *arg;
 
                 // send the msg
-                send(socket1, reinterpret_cast<void *> (arg), sizeof(Packet), 0);
+                char packetAsArray[BUFFER_LEN];
+                memcpy(packetAsArray, arg, sizeof(EndPacket ));
+                int n = send(socket1, packetAsArray, sizeof(EndPacket), 0);
+                std::cout << "end packet sent " << n << " bytes" << std::endl;
 
                 EndPacket *p = reinterpret_cast<EndPacket *> (arg);
                 delete p;
@@ -313,16 +496,19 @@ void SocketHelper::runSlave(const bool *run){
         std::cout << inet_ntoa(reinterpret_cast<sockaddr_in *> (&cli_addr_sock)->sin_addr) << " port ";
         std::cout << ntohs(reinterpret_cast<sockaddr_in *> (&cli_addr_sock)->sin_port) << std::endl;
 
+        /*
         std::cout << "incoming msg: ";
         for (int i = 0; i < n; i++) {
             std::cout << std::hex << (int) buffer[i];
         }
         std::cout << std::endl;
+         */
 
         // TODO: process incomming msg
         // msg comes in multiple goes
         // have to concatenate msges
         pushToIncomingQueue(buffer, n);
+        processIncomingMsg();
     }
 
     // closing socket

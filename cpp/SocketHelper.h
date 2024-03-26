@@ -10,6 +10,7 @@
 #include <queue>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <list>
 #include "PacketStructure.h"
 
 class SocketHelper {
@@ -20,7 +21,8 @@ private:
     bool msgSend = true;
     struct sockaddr_in serv_addr;
     struct sockaddr_in *dstIpAddr = nullptr;
-    std::queue<IncomingPacket *> incomingPacketQueue;
+    std::vector<IncomingPacket *> incomingPacketList;
+    std::string outputDir;
 
     void fillPacketHeader(PacketHeader *packetHeader, uint16_t tId, uint32_t seqNum);
     void fillPacket(Packet *packet, PacketHeader *packetHeader, uint8_t *data, size_t dataLen);
@@ -52,6 +54,16 @@ public:
     void setIpSettings(uint8_t *dstIpAddr, size_t port);
 
     bool pushToIncomingQueue(char *buffer, ssize_t len);
+
+    void processIncomingMsg();
+
+    void sortPackets(Packet *packets, size_t n);
+
+    bool checkCorrectnessOfPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket);
+
+    bool savePacketsToFile(StartPacket *startPacket, Packet *packets);
+
+    void setOutputDirPath(std::string outDir);
 };
 
 
