@@ -10,8 +10,8 @@ import java.lang.*;
 
 public class Transmitter {
 
-    private static final int MAX_PACKET_SIZE = 60 * 1024; // 64 KB
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//Kapitel II.pdf/";
+    private static final int MAX_PACKET_SIZE = 60 * 1024; // 60 KB max. Übertragungsgröße
+    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//Kapitel II.pdf/"; // 49 Bytes lang
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3000;
 
@@ -41,7 +41,7 @@ public class Transmitter {
 
 
         //erstes Paket
-        byte[] transIDBytes = intToBytes(transmissionID); // wandle transmission id in byte-array
+        byte[] transIDBytes = shortToBytes(transmissionID); // wandle transmission id in byte-array
         byte[] seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
         byte[] maxSeqNumber = intToBytes(Integer.MAX_VALUE);
         byte[] firstPaket = new byte[266];  // größe zum übertragen des ersten pakets sind 266 byte maximal
@@ -61,9 +61,9 @@ public class Transmitter {
         // zweites bis n-1tes Paket
         while ((bytesRead = fileInputStream.read(buffer)) != -1) {  // daten in buffer[] lesen
             totalBytesRead += bytesRead;
-            transIDBytes = intToBytes(transmissionID); // wandle transmission id in byte-array
+            transIDBytes = shortToBytes(transmissionID); // wandle transmission id in byte-array
             seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
-            byte[] data = new byte[bytesRead + 1024];  // größe zum übertragen + 6 bytes für transmission id & sequence number
+            byte[] data = new byte[bytesRead + 1024];  // 60 kb + 1kb
             System.arraycopy(transIDBytes, 0, data, 0, transIDBytes.length); // kopiere transmission id in data[]
             System.arraycopy(seqNumberBytes, 0, data, transIDBytes.length, seqNumberBytes.length); // kopiere sequence number in data[]
             System.arraycopy(buffer, 0, data, transIDBytes.length + seqNumberBytes.length, bytesRead); // kopiere buffer in data[]
@@ -86,22 +86,30 @@ public class Transmitter {
         byte[] lastPacket = new byte[22]; // letztes Paket ist 22 Byte lang
         System.arraycopy(transIDBytes, 0, lastPacket, 0, 2); // kopiere transmission id in data[]
         System.arraycopy(seqNumberBytes, 0, lastPacket, 2, 4); // kopiere sequence number in data[]
-        //System.arraycopy(md, 0, lastPacket, 6, 16);
+        byte[] mdBytes = md.digest();
+        System.arraycopy(mdBytes, 0, lastPacket, 6, 16);
 
         DatagramPacket eofPacket = new DatagramPacket(lastPacket, lastPacket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(eofPacket);
 
         fileInputStream.close();
 
-        // Calculate MD5 checksum and print
-        byte[] md5Bytes = md.digest();
-        System.out.println("MD5 checksum: " + bytesToHex(md5Bytes));
+
+        System.out.println("MD5 checksum: " + bytesToHex(mdBytes));
+        System.out.println(mdBytes.length);
     }
 
-    private static byte[] intToBytes(int value) {
+    private static byte[] intToBytes(int value) { // 4 Byte
         return new byte[] {
                 (byte) (value >> 24),
                 (byte) (value >> 16),
+                (byte) (value >> 8),
+                (byte) value
+        };
+    }
+
+    private static byte[] shortToBytes(int value) {  // 2 Byte
+        return new byte[] {
                 (byte) (value >> 8),
                 (byte) value
         };
