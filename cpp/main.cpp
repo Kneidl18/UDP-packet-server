@@ -26,8 +26,8 @@ void getFileNameFromPath(std::string filePath, char **fileName){
         }
 
         *fileName = (char *) calloc (sizeof(char), filePath.length() - i + 1);
-        for (int j = i; j < filePath.length(); j++){
-            (*fileName + (j - i))[0] = filePath[j];
+        for (int j = i; j < filePath.length() - 1; j++){
+            (*fileName + (j - i))[0] = filePath[j + 1];
         }
         break;
     }
@@ -174,7 +174,8 @@ int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8
 
 int main(int argc, char *argv[]) {
     if (argc < 2){
-        std::cerr << "usage: simpleServer [-p <port>] [--ip <ip_addr>] [--listen] [--send <pathToFile>]" << std::endl;
+        std::cerr << "usage: simpleServer [-p <port>] [--ip <ip_addr>] [-o <output path>]";
+        std::cerr << "[--listen] [--send <pathToFile>]" << std::endl;
         exit(1);
     }
 

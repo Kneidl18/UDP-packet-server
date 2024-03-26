@@ -7,4 +7,7 @@ add_executable(PP main.cpp
         PacketStructure.h
         configuration.h
         SocketHelper.cpp
-        SocketHelper.h)
+        SocketHelper.h
+        md5.cpp
+        md5.h
+        md5_loc.h)
