@@ -7,10 +7,9 @@
 
 typedef enum {
     SLAVE,
-    MASTER,
-    MASTER_SLAVE
+    MASTER
 }Config;
 
-#define CONFIGURATION MASTER_SLAVE
+#define CONFIGURATION SLAVE
 
 #endif //PP_CONFIGURATION_H
