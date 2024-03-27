@@ -13,7 +13,9 @@ import java.util.Random;
 public class Transmitter {
 
     private static final int MAX_PACKET_SIZE = 5 * 1024; // 5 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2.pdf/";
+    // private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2.pdf/";
+
+    private static final String FILE_NAME = "../cpp/md5.h";
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3000;
     private static IOException IllegalArgumentException;
@@ -44,8 +46,6 @@ public class Transmitter {
 
         int totalBytesRead = 0;
 
-
-
         //erstes Paket
         byte[] transIDBytes = shortToBytes(transmissionID); // wandle transmission id in byte-array
         byte[] seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
@@ -62,10 +62,9 @@ public class Transmitter {
 
         DatagramPacket packet = new DatagramPacket(firstPaket, firstPaket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(packet);  // sende paket
-        System.out.println(sequenceNumber);
+        System.out.println("start packet snr: " + sequenceNumber);
 
         sequenceNumber++;
-
 
         // zweites bis n-1tes Paket
         while ((bytesRead = fileInputStream.read(buffer)) != -1) {  // daten in buffer[] lesen
@@ -79,14 +78,12 @@ public class Transmitter {
 
             packet = new DatagramPacket(data, data.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
             socket.send(packet);  // sende paket
-            System.out.println(sequenceNumber);
+            System.out.println("packet snr: " + sequenceNumber);
 
             // Update MD5 checksum
             md.update(buffer, 0, bytesRead);
 
             sequenceNumber++;
-            transmissionID++;
-
         }
 
 
@@ -98,7 +95,8 @@ public class Transmitter {
 
         DatagramPacket eofPacket = new DatagramPacket(lastPacket, lastPacket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(eofPacket);
-        System.out.println(Integer.MAX_VALUE);
+        System.out.println("end packet snr: " + sequenceNumber);
+        System.out.println("int max value: " + Integer.MAX_VALUE);
 
         fileInputStream.close();
 
