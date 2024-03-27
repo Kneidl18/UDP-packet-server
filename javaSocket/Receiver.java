@@ -51,7 +51,7 @@ public class Receiver{
             }
 
             // TODO: max sequence number is the sequence number of the end-packet
-            if (sequenceNumber == Integer.MAX_VALUE) {  //letztes Paket übertragen = springe aus der schleife
+            if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
                 break;
             }
 
