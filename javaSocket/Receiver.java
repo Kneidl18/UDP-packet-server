@@ -37,6 +37,8 @@ public class Receiver{
             int sequenceNumber = bytesToInt(receivedData, 2);
             System.out.println(sequenceNumber);
 
+            // TODO: the first sequence number doesn't have to be 0. it is a random number in the range
+            // of possible numbers
             if (sequenceNumber == 0) {
                 byte[] fileNameBytes = new byte[length - 10];
                 System.arraycopy(receivedData, 10, fileNameBytes, 0, length - 10);
@@ -45,6 +47,7 @@ public class Receiver{
                 fileOutputStream = new FileOutputStream(fileName);
             }
 
+            // TODO: max sequence number is the sequence number of the end-packet
             if (sequenceNumber == Integer.MAX_VALUE) {  //letztes Paket übertragen = springe aus der schleife
                 break;
             }
