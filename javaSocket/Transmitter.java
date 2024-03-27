@@ -13,7 +13,7 @@ import java.util.Random;
 public class Transmitter {
 
     private static final int MAX_PACKET_SIZE = 5 * 1024; // 5 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "../cpp/md5.h";
+    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2.pdf/";
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3000;
     private static IOException IllegalArgumentException;
@@ -35,19 +35,20 @@ public class Transmitter {
         FileInputStream fileInputStream = new FileInputStream(new File(FILE_NAME));
         byte[] buffer = new byte[MAX_PACKET_SIZE];
         int bytesRead = 0;
-        int sequenceNumber = rand.nextInt(Integer.MAX_VALUE);
+        long fileSize = new File(FILE_NAME).length();
+        int sequenceNumber = rand.nextInt(Integer.MAX_VALUE - (int) (fileSize/MAX_PACKET_SIZE));
+        byte[] maxSeqNumber = intToBytes(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE));
         int transmissionID = rand.nextInt(Integer.MAX_VALUE);
 
         MessageDigest md = MessageDigest.getInstance("MD5");
 
         int totalBytesRead = 0;
-        long fileSize = new File(FILE_NAME).length();
+
 
 
         //erstes Paket
         byte[] transIDBytes = shortToBytes(transmissionID); // wandle transmission id in byte-array
         byte[] seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
-        byte[] maxSeqNumber = intToBytes(Integer.MAX_VALUE);
         byte[] fileNameBytes = FILE_NAME.getBytes(StandardCharsets.UTF_8);
         byte[] firstPaket = null;
         if (fileNameBytes.length < 256) {
@@ -64,7 +65,6 @@ public class Transmitter {
         System.out.println(sequenceNumber);
 
         sequenceNumber++;
-        // transmissionID++;
 
 
         // zweites bis n-1tes Paket
@@ -85,7 +85,7 @@ public class Transmitter {
             md.update(buffer, 0, bytesRead);
 
             sequenceNumber++;
-            // transmissionID++;
+            transmissionID++;
 
         }
 
