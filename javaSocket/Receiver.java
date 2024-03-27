@@ -9,10 +9,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class Receiver{
-    private static final int MAX_PACKET_SIZE = 60 * 1024; // 60 KB max. Paketgröße
+    private static final int MAX_PACKET_SIZE = 5 * 1024; // 60 KB max. Paketgröße
     private static String fileName = null;
     private static final int DESTINATION_PORT = 3000;
-    private static FileOutputStream fileOutputStream;
+    private static FileOutputStream fileOutputStream = null;
 
     public static void main(String[] args) {
         try {
@@ -40,7 +40,7 @@ public class Receiver{
 
             // TODO: the first sequence number doesn't have to be 0. it is a random number in the range
             // of possible numbers
-            if (sequenceNumber == 0) {
+            if (length <= 266) {
                 byte[] fileNameBytes = new byte[length - 10];
                 System.arraycopy(receivedData, 10, fileNameBytes, 0, length - 10);
                 fileName = new String(fileNameBytes, StandardCharsets.UTF_8);
