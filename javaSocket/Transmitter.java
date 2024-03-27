@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.lang.*;
@@ -11,7 +12,7 @@ import java.lang.*;
 public class Transmitter {
 
     private static final int MAX_PACKET_SIZE = 60 * 1024; // 60 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//Verzeichnis_Laengenschnitt.pdf/"; // 49 Bytes lang
+    private static final String FILE_NAME = "../cpp/md5.h";
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3000;
     private static IOException IllegalArgumentException;
@@ -45,7 +46,7 @@ public class Transmitter {
         byte[] transIDBytes = shortToBytes(transmissionID); // wandle transmission id in byte-array
         byte[] seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
         byte[] maxSeqNumber = intToBytes(Integer.MAX_VALUE);
-        byte[] fileNameBytes = FILE_NAME.getBytes("UTF-8");
+        byte[] fileNameBytes = FILE_NAME.getBytes(StandardCharsets.UTF_8);
         byte[] firstPaket = null;
         if (fileNameBytes.length < 256) {
             firstPaket = new byte[fileNameBytes.length + 10];  // größe zum übertragen des ersten pakets ist variabelSystem.arraycopy(transIDBytes, 0, firstPaket, 0, 2); // kopiere transmission id in data[]

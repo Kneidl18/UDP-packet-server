@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -42,7 +43,7 @@ public class Receiver{
             if (sequenceNumber == 0) {
                 byte[] fileNameBytes = new byte[length - 10];
                 System.arraycopy(receivedData, 10, fileNameBytes, 0, length - 10);
-                fileName = new String(fileNameBytes, "UTF-8");
+                fileName = new String(fileNameBytes, StandardCharsets.UTF_8);
                 fileName = new File(fileName).getName(); // dateiname aus pfad extrahieren
                 fileOutputStream = new FileOutputStream(fileName);
             }
