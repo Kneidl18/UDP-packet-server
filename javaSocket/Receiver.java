@@ -11,7 +11,7 @@ public class Receiver{
     private static final int MAX_PACKET_SIZE = 60 * 1024; // 60 KB max. Paketgröße
     private static String fileName = null;
     private static final int DESTINATION_PORT = 3000;
-    private static FileOutputStream fileOutputStream = null;
+    private static FileOutputStream fileOutputStream;
 
     public static void main(String[] args) {
         try {
