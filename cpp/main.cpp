@@ -1,13 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <fstream>
-#include <print>
-
 #include "SocketHelper.h"
-
-void printMenu(){
-    std::cout << "Your options are (0)exit, (1)send message, (2)" << std::endl;
-}
 
 /**
  * load the filename into the param filename
@@ -35,12 +29,12 @@ void getFileNameFromPath(std::string filePath, char **fileName){
 
 /**
  * get size of bytes in file
- * @param filename
+ * @param fileName
  * @return
  */
-std::ifstream::pos_type filesize(std::string filename)
+std::ifstream::pos_type filesize(const std::string& fileName)
 {
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    std::ifstream in(fileName, std::ifstream::ate | std::ifstream::binary);
     return in.tellg();
 }
 
@@ -50,20 +44,8 @@ std::ifstream::pos_type filesize(std::string filename)
  * @param filePath
  * @return
  */
-size_t loadData(uint8_t **data, std::string filePath){
+size_t loadData(uint8_t **data, const std::string& filePath){
     std::ifstream file (filePath);
-    /*
-    if (filePath.find('/') == std::string::npos){
-        // if no / is found in filepath
-        // e.g. if it's a relative path
-        // like 'test.txt'
-        file.open("./" + filePath);
-    }
-    else {
-        // if it's an absolute path
-        file.open(filePath);
-    }
-     */
 
     size_t dataLen = filesize(filePath);
     *data = (uint8_t *) malloc (dataLen);
@@ -188,9 +170,11 @@ int main(int argc, char *argv[]) {
     auto *sh = new SocketHelper();
     bool run = true;
 
-    if (runCommand == 0 || runCommand == 1) {
+    if (runCommand == 1) {
         if (port != 0)
             sh->setIpSettings(dstIpAddr, port);
+
+        sh->setOutputDirPath(outputDirPath);
 
         std::thread socketThreadListen(&SocketHelper::run, sh, &run, SLAVE);
 
@@ -229,6 +213,12 @@ int main(int argc, char *argv[]) {
         run = false;
         socketThreadSending.join();
         delete data;
+    }
+    else{
+        std::cout << "specify more commands" << std::endl;
+        std::cerr << "usage: simpleServer [-p <port>] [--ip <ip_addr>] [-o <output path>]";
+        std::cerr << "[--listen] [--send <pathToFile>]" << std::endl;
+        exit(1);
     }
 
     delete sh;
