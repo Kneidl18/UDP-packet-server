@@ -19,8 +19,7 @@
 
 std::random_device rd; // obtain a random number from hardware
 std::mt19937 gen(rd()); // seed the generator
-std::uniform_int_distribution<> distr(0, (int) pow(2, 32)); // define the range
-
+std::uniform_int_distribution<> distr(0, (int) pow(2, 31)); // define the range, leave 2^31 packets open
 
 /**
  * set ip address and port for specific dst port/ip addr
@@ -272,7 +271,7 @@ void SocketHelper::processIncomingMsg(){
     memcpy(&endPacket, incomingPacketList[n], sizeof(EndPacket));
 
     // if the packets or the checksum doesn't match
-    if (!checkCorrectnessOfPackets(&startPacket, packets, &endPacket)){
+   if (!checkCorrectnessOfPackets(&startPacket, packets, &endPacket)){
         std::cerr << "checksum wrong or other problem with packets, deleting and skipping" << std::endl;
     }
 
