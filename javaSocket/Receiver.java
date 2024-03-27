@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -37,14 +38,17 @@ public class Receiver{
             int sequenceNumber = bytesToInt(receivedData, 2);
             System.out.println(sequenceNumber);
 
+            // TODO: the first sequence number doesn't have to be 0. it is a random number in the range
+            // of possible numbers
             if (sequenceNumber == 0) {
                 byte[] fileNameBytes = new byte[length - 10];
                 System.arraycopy(receivedData, 10, fileNameBytes, 0, length - 10);
-                fileName = new String(fileNameBytes, "UTF-8");
+                fileName = new String(fileNameBytes, StandardCharsets.UTF_8);
                 fileName = new File(fileName).getName(); // dateiname aus pfad extrahieren
                 fileOutputStream = new FileOutputStream(fileName);
             }
 
+            // TODO: max sequence number is the sequence number of the end-packet
             if (sequenceNumber == Integer.MAX_VALUE) {  //letztes Paket übertragen = springe aus der schleife
                 break;
             }
