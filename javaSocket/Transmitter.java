@@ -79,7 +79,7 @@ public class Transmitter {
 
             packet = new DatagramPacket(data, data.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
             socket.send(packet);  // sende paket
-            System.out.println(sequenceNumber);
+            System.out.println(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE));
 
             // Update MD5 checksum
             md.update(buffer, 0, bytesRead);
