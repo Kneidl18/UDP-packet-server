@@ -36,7 +36,7 @@ public class Transmitter {
         byte[] buffer = new byte[MAX_PACKET_SIZE];
         int bytesRead = 0;
         long fileSize = new File(FILE_NAME).length();
-        int sequenceNumber = rand.nextInt(Integer.MAX_VALUE);
+        int sequenceNumber = rand.nextInt(Integer.MAX_VALUE - (int) (fileSize/MAX_PACKET_SIZE));
         byte[] maxSeqNumber = intToBytes(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE));
         int transmissionID = rand.nextInt(Integer.MAX_VALUE);
 
@@ -98,7 +98,7 @@ public class Transmitter {
 
         DatagramPacket eofPacket = new DatagramPacket(lastPacket, lastPacket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(eofPacket);
-        System.out.println(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE));
+        System.out.println(Integer.MAX_VALUE);
 
         fileInputStream.close();
 
