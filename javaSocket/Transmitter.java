@@ -11,7 +11,7 @@ import java.lang.*;
 public class Transmitter {
 
     private static final int MAX_PACKET_SIZE = 60 * 1024; // 60 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//2023-05-17-RA-Test3.pdf/"; // 49 Bytes lang
+    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2.pdf/"; // 49 Bytes lang
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3000;
 
@@ -53,6 +53,7 @@ public class Transmitter {
 
         DatagramPacket packet = new DatagramPacket(firstPaket, firstPaket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(packet);  // sende paket
+        System.out.println(sequenceNumber);
 
         sequenceNumber++;
         transmissionID++;
@@ -70,6 +71,7 @@ public class Transmitter {
 
             packet = new DatagramPacket(data, data.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
             socket.send(packet);  // sende paket
+            System.out.println(sequenceNumber);
 
             // Update MD5 checksum
             md.update(buffer, 0, bytesRead);
@@ -82,12 +84,13 @@ public class Transmitter {
 
         byte[] lastPacket = new byte[22]; // letztes Paket ist 22 Byte lang
         System.arraycopy(transIDBytes, 0, lastPacket, 0, 2); // kopiere transmission id in data[]
-        System.arraycopy(seqNumberBytes, 0, lastPacket, 2, 4); // kopiere sequence number in data[]
+        System.arraycopy(maxSeqNumber, 0, lastPacket, 2, 4); // kopiere sequence number in data[]
         byte[] mdBytes = md.digest();
         System.arraycopy(mdBytes, 0, lastPacket, 6, 16);
 
         DatagramPacket eofPacket = new DatagramPacket(lastPacket, lastPacket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(eofPacket);
+        System.out.println(Integer.MAX_VALUE);
 
         fileInputStream.close();
 

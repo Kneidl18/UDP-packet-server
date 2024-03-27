@@ -22,7 +22,7 @@ public class Receiver{
     }
 
     private static void receiveFile(DatagramSocket socket) throws IOException, NoSuchAlgorithmException {
-        FileOutputStream fileOutputStream = new FileOutputStream("received_file2.pdf");
+        FileOutputStream fileOutputStream = new FileOutputStream("received_file4.pdf");
         MessageDigest md = MessageDigest.getInstance("MD5");
 
         byte[] buffer = new byte[MAX_PACKET_SIZE];
@@ -34,6 +34,8 @@ public class Receiver{
 
             byte[] receivedData = packet.getData();
             int length = packet.getLength();
+            int sequenceNumber = bytesToInt(receivedData, 2); // Extrahiere die Sequenznummer aus den empfangenen Daten
+            System.out.println(sequenceNumber);
 
             if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
                 break;
@@ -56,4 +58,12 @@ public class Receiver{
         }
         return sb.toString();
     }
+
+    private static int bytesToInt(byte[] bytes, int offset) {
+        return ((bytes[offset] & 0xFF) << 24) |
+                ((bytes[offset + 1] & 0xFF) << 16) |
+                ((bytes[offset + 2] & 0xFF) << 8) |
+                (bytes[offset + 3] & 0xFF);
+    }
+
 }
