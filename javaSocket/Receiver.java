@@ -1,5 +1,6 @@
 package javaSocket;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.*;
@@ -8,8 +9,9 @@ import java.security.NoSuchAlgorithmException;
 
 public class Receiver{
     private static final int MAX_PACKET_SIZE = 60 * 1024; // 60 KB max. Paketgröße
-    private static final String DESTINATION_IP = "127.0.0.1";
+    private static String fileName = null;
     private static final int DESTINATION_PORT = 3000;
+    private static FileOutputStream fileOutputStream = null;
 
     public static void main(String[] args) {
         try {
@@ -22,9 +24,7 @@ public class Receiver{
     }
 
     private static void receiveFile(DatagramSocket socket) throws IOException, NoSuchAlgorithmException {
-        FileOutputStream fileOutputStream = new FileOutputStream("received_file4.pdf");
         MessageDigest md = MessageDigest.getInstance("MD5");
-
         byte[] buffer = new byte[MAX_PACKET_SIZE];
         DatagramPacket packet;
 
@@ -34,15 +34,25 @@ public class Receiver{
 
             byte[] receivedData = packet.getData();
             int length = packet.getLength();
-            int sequenceNumber = bytesToInt(receivedData, 2); // Extrahiere die Sequenznummer aus den empfangenen Daten
+            int sequenceNumber = bytesToInt(receivedData, 2);
             System.out.println(sequenceNumber);
 
-            if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
+            if (sequenceNumber == 0) {
+                byte[] fileNameBytes = new byte[length - 10];
+                System.arraycopy(receivedData, 10, fileNameBytes, 0, length - 10);
+                fileName = new String(fileNameBytes, "UTF-8");
+                fileName = new File(fileName).getName(); // dateiname aus pfad extrahieren
+                fileOutputStream = new FileOutputStream(fileName);
+            }
+
+            if (sequenceNumber == Integer.MAX_VALUE) {  //letztes Paket übertragen = springe aus der schleife
                 break;
             }
 
             fileOutputStream.write(receivedData, 6, length - 6);
-            md.update(receivedData, 6, length - 6);
+            if (sequenceNumber != 0) {
+                md.update(receivedData, 6, length - 6);
+            }
         }
 
         fileOutputStream.close();

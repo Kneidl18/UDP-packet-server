@@ -11,9 +11,10 @@ import java.lang.*;
 public class Transmitter {
 
     private static final int MAX_PACKET_SIZE = 60 * 1024; // 60 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2.pdf/"; // 49 Bytes lang
+    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//Verzeichnis_Laengenschnitt.pdf/"; // 49 Bytes lang
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3000;
+    private static IOException IllegalArgumentException;
 
     public static void main(String[] args) {
         try {
@@ -45,8 +46,12 @@ public class Transmitter {
         byte[] seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
         byte[] maxSeqNumber = intToBytes(Integer.MAX_VALUE);
         byte[] fileNameBytes = FILE_NAME.getBytes("UTF-8");
-        byte[] firstPaket = new byte[266];  // größe zum übertragen des ersten pakets sind 266 byte maximal
-        System.arraycopy(transIDBytes, 0, firstPaket, 0, 2); // kopiere transmission id in data[]
+        byte[] firstPaket = null;
+        if (fileNameBytes.length < 256) {
+            firstPaket = new byte[fileNameBytes.length + 10];  // größe zum übertragen des ersten pakets ist variabelSystem.arraycopy(transIDBytes, 0, firstPaket, 0, 2); // kopiere transmission id in data[]
+        } else {
+            throw IllegalArgumentException;
+        }
         System.arraycopy(seqNumberBytes, 0, firstPaket, 2, 4); // kopiere sequence number in data[]
         System.arraycopy(maxSeqNumber, 0, firstPaket, 6, 4); // kopiere max sequence number in data[]
         System.arraycopy(fileNameBytes, 0, firstPaket, 10, fileNameBytes.length); // kopiere file name in data[]
