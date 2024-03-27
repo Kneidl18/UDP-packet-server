@@ -13,7 +13,7 @@ import java.util.Random;
 public class Transmitter {
 
     private static final int MAX_PACKET_SIZE = 5 * 1024; // 60 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//Verzeichnis_Laengenschnitt.pdf/";
+    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2.pdf/";
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3000;
     private static IOException IllegalArgumentException;
@@ -36,7 +36,7 @@ public class Transmitter {
         byte[] buffer = new byte[MAX_PACKET_SIZE];
         int bytesRead = 0;
         int sequenceNumber = rand.nextInt(Integer.MAX_VALUE);
-        int transmissionID = 1;
+        int transmissionID = rand.nextInt(Integer.MAX_VALUE);
 
         MessageDigest md = MessageDigest.getInstance("MD5");
 

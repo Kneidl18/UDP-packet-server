@@ -13,6 +13,7 @@ public class Receiver{
     private static String fileName = null;
     private static final int DESTINATION_PORT = 3000;
     private static FileOutputStream fileOutputStream = null;
+    private static int firstPacketCount = 0;
 
     public static void main(String[] args) {
         try {
@@ -40,7 +41,8 @@ public class Receiver{
 
             // TODO: the first sequence number doesn't have to be 0. it is a random number in the range
             // of possible numbers
-            if (length <= 266) {
+            firstPacketCount++;
+            if (length <= 266 && firstPacketCount < 2) {
                 byte[] fileNameBytes = new byte[length - 10];
                 System.arraycopy(receivedData, 10, fileNameBytes, 0, length - 10);
                 fileName = new String(fileNameBytes, StandardCharsets.UTF_8);
