@@ -251,7 +251,7 @@ void SocketHelper::processIncomingMsg(){
     // calculate the amount of packets
     size_t n = startPacket.sequenceNumberMax - startPacket.packetHeader.sequenceNumber;
 
-    if (incomingPacketList.size() < n + 1){
+    if (incomingPacketList.size() < n+1){
         // apparently not all packets have yet arrived. waiting for all to arrive
         return;
     }

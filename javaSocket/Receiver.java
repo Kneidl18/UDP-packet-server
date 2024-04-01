@@ -64,7 +64,7 @@ public class Receiver{
         fileOutputStream.close();
 
         byte[] mdBytes = md.digest();
-        System.out.println("Received MD5 checksum: " + bytesToHex(mdBytes));
+        System.out.println(STR."Received MD5 checksum: \{bytesToHex(mdBytes)}");
     }
 
     private static String bytesToHex(byte[] bytes) {
