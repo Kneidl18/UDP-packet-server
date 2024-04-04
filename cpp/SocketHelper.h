@@ -32,8 +32,11 @@ private:
 
     static void calcChecksum(EndPacket *endPacket, uint8_t *data, size_t dataLen, uint8_t *fileName,
                       size_t fileNameLen);
-    void calcChecksumFromTransmission(Transmission *transmission, EndPacket *endPacket);
+    static void calcChecksumFromTransmission(Transmission *transmission, EndPacket *endPacket);
+    // void calcChecksumFromPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket, size_t packetAmount);
+
     static bool checkCorrectnessOfPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket);
+    bool checkCorrectnessOfTransmission(Transmission *t);
 
     bool pushToPacketQueue(packetVariant packet);
     bool pushToIncomingQueue(char *buffer, ssize_t len);
@@ -48,8 +51,10 @@ private:
     void checkFinishedTransmission();
 
     static void sortPackets(Packet *packets, size_t n);
+    void sortPackets(Transmission *t);
 
     bool savePacketsToFile(StartPacket *startPacket, Packet *packets);
+    bool saveTransmissionToFile(Transmission *t);
 
 public:
     void run(const bool *run, Config config);
@@ -61,8 +66,6 @@ public:
     void setIpSettings(uint8_t *dstIp, size_t port);
 
     void setOutputDirPath(std::string outDir);
-
-    void calcChecksumFromPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket, size_t packetAmount);
 
 };
 

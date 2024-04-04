@@ -10,7 +10,7 @@
 
 #define MAX_DATA_LEN 6000.0
 #define BUFFER_LEN (uint) MAX_DATA_LEN
-#define PACKET_TIMEOUT 5000 // millisecond a packet is kept before it's deleted from the vector
+#define PACKET_TIMEOUT 50000 // millisecond a packet is kept before it's deleted from the vector
 
 typedef struct{
     uint16_t transmissionId;

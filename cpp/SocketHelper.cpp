@@ -120,7 +120,7 @@ void SocketHelper::calcChecksumFromTransmission (Transmission *transmission, End
     // process the filename
     md5_o.process(startPacket->fileName, startPacket->nameLen);
 
-    for (auto i = 1; i < startPacket->sequenceNumberMax - startPacket->packetHeader.sequenceNumber - 1; i++){
+    for (auto i = 1; i < transmission->transmission.size() - 1; i++){
         auto *packet = std::get<Packet *> (transmission->transmission[i]);
         md5_o.process(packet->data, packet->dataLen);
     }
@@ -128,6 +128,49 @@ void SocketHelper::calcChecksumFromTransmission (Transmission *transmission, End
     md5_o.finish(endPacket->checksum);
 }
 
+/**
+ * saves the content of the transmission to the filename specified in the startPacket
+ * the directory to store the packet in is in the object variable outputDir
+ * @param startPacket
+ * @param packets
+ * @return
+ */
+bool SocketHelper::saveTransmissionToFile (Transmission *t) {
+    auto startPacket = std::get<StartPacket *> (t->transmission.front());
+
+    // create output file dir from received filename and stored file path
+    std::string outFilePath = outputDir;
+    outFilePath += std::string(reinterpret_cast<char *> (startPacket->fileName));
+
+    if (!std::filesystem::exists(outputDir.c_str())) {
+        std::filesystem::create_directory(outputDir.c_str());
+    }
+
+    // don't worry about seg fault because of fileName being an uint8_t
+    // as it points to a 65000 byte char array there is always a \0 at the end
+    std::ofstream output_file(outFilePath);
+    std::ostream_iterator<std::string> output_iterator(output_file, "\n");
+
+    if (!output_file.is_open()){
+        // file couldn't be opened...
+        std::cerr << "couldn't open file to store incoming message" << std::endl;
+        return false;
+    }
+    for (int i = 1; i < t->transmission.size() - 1; i++){
+        for (int j = 0; j < std::get<Packet *> (t->transmission[i])->dataLen; j++)
+            output_file << std::get<Packet *> (t->transmission[i])->data[j];
+    }
+
+    return true;
+}
+
+/**
+ * saves the content of the packets to the filename specified in the startPacket
+ * the directory to store the packet in is in the object variable outputDir
+ * @param startPacket
+ * @param packets
+ * @return
+ */
 bool SocketHelper::savePacketsToFile (StartPacket *startPacket, Packet *packets) {
     size_t n = startPacket->sequenceNumberMax - startPacket->packetHeader.sequenceNumber - 1;
 
@@ -175,6 +218,56 @@ void SocketHelper::sortPackets (Packet *packets, size_t n){
         }
         packets[j + 1] = key;
     }
+}
+
+bool compareBySequenceNumber(packetVariant &a, packetVariant &b){
+    return std::get<Packet *> (a)->packetHeader.sequenceNumber <
+            std::get<Packet *> (b)->packetHeader.sequenceNumber;
+}
+
+/**
+ * sort the packets in a transmission
+ * we expect the first and last packet to be in the correct spot
+ * @param t transmission to sort
+ */
+void SocketHelper::sortPackets (Transmission *t) {
+    std::sort(t->transmission.begin()+1, t->transmission.end()-1, compareBySequenceNumber);
+}
+
+/**
+ * checks the correctness of the received packets (also checksum)
+ * @param startPacket
+ * @param packets array of all packets (amount should be seqNumMax - seqNumStart
+ * @param endPacket
+ * @return true if all packets are correct, false if there is a problem with the packets (also checks checksum)
+ */
+bool SocketHelper::checkCorrectnessOfTransmission (Transmission *t){
+    auto startPacket = std::get<StartPacket *> (t->transmission.front());
+    uint32_t sequenceNumberEnd = startPacket->sequenceNumberMax;
+    uint32_t sequenceNumberStart = startPacket->packetHeader.sequenceNumber;
+
+    for (int i = 1; i < sequenceNumberEnd - sequenceNumberStart; i++) {
+        if (std::get<Packet *> (t->transmission[i])->packetHeader.sequenceNumber != sequenceNumberStart + i){
+            // sequence number doesn't seem to match nth element
+            std::cerr << "packets are missing" << std::endl;
+            // exit(1);
+            return false;
+        }
+    }
+
+    // calcChecksum(&dummy, data, dataPointer, startPacket->fileName, startPacket->nameLen);
+    EndPacket dummy;
+    calcChecksumFromTransmission(t, &dummy);
+
+    auto endPacket = std::get<EndPacket *> (t->transmission[t->transmission.size() - 1]);
+    for (int i = 0; i < 16; i++){
+        if (dummy.checksum[i] != endPacket->checksum[i]){
+            std::cerr << "error in checksum" << std::endl;
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
@@ -367,61 +460,24 @@ void SocketHelper::checkFinishedTransmission(){
  * for the final packet
  */
 void SocketHelper::processIncomingMsg(Transmission *t) {
-    // load the first packet
-    StartPacket *startPacket;
-
-    packetVariant first = t->transmission.front();
-    std::visit([&startPacket](auto &&arg) {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (!std::is_same_v<T, StartPacket *>) {
-            // houston we have a problem
-            std::cerr << "this transmission has the wrong type" << std::endl;
-            return;
-        }
-
-        // if the first packet is of type StartPacket
-        startPacket = reinterpret_cast<StartPacket *> (arg);
-    }, first);
-
-    // calculate the amount of packets
-    size_t n = startPacket->sequenceNumberMax - startPacket->packetHeader.sequenceNumber;
-
-    // copy all packets from the incoming vector
-    // TODO: check why unreachable code
-    Packet packets[n - 1];
-    // auto packets = new Packet[n - 1];
-    for (int i = 1; i < n; i++) {
-        if (!std::holds_alternative<Packet *>(t->transmission[i])) {
-            // if the next element isn't of type packet, there seems to be an issue
-            std::cerr << "packet is of type <EndPacket *> not <Packet *>" << std::endl;
-            return;
-        }
-
-        // copy the packet (or better the header and the pointers)
-        memcpy(&packets[i - 1], std::get<Packet *>(t->transmission[i]), sizeof(Packet));
-    }
-
     // the packets could be in wrong order
-    sortPackets(packets, n - 1);
-
-    // the nth packet is the end packet
-    EndPacket endPacket;
-    memcpy(&endPacket, std::get<EndPacket *>(t->transmission[n]), sizeof(EndPacket));
+    sortPackets(t);
 
     // if the packets or the checksum doesn't match
-    if (!checkCorrectnessOfPackets (startPacket, packets, &endPacket)) {
+    if (!checkCorrectnessOfTransmission (t)) {
         std::cerr << "checksum wrong or other problem with packets, deleting and skipping" << std::endl;
         return;
     }
 
     // print the packets for testing
-    std::cout << "incoming packages: " << startPacket;
-    for (auto i = 0; i < n - 1; i++){
-        std::cout << packets[i];
-    }
-    std::cout << endPacket;
+    std::cout << "incoming packages: " << std::get<StartPacket *> (t->transmission.front());
+    std::cout << "amount of packets: " << t->transmission.size() - 2 << std::endl;
+    /*for (auto i = 1; i < t->transmission.size() - 1; i++){
+        std::cout << std::get<Packet *> (t->transmission[i]);
+    }*/
+    std::cout << std::get<EndPacket *> (t->transmission[t->transmission.size() - 1]);
 
-    savePacketsToFile(startPacket, packets);
+    saveTransmissionToFile(t);
 }
 
 /**
