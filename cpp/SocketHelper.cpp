@@ -379,9 +379,9 @@ void SocketHelper::processIncomingMsg(Transmission *t) {
         return;
     }
 
-    // output the packets
+    // print the packets for testing
     std::cout << "incoming packages: " << startPacket;
-    for (auto i: packets) {
+    for (auto i : packets) {
         std::cout << i;
     }
     std::cout << endPacket;
@@ -495,7 +495,7 @@ void SocketHelper::createSocketRecv(int *socket1) {
         std::cout << "listening on: " << inet_ntoa(dstIpAddr->sin_addr) << " port " << ntohs(dstIpAddr->sin_port) << std::endl;
     }
 
-    listen(*socket1, 10);
+    listen(*socket1, 5);
 
     fcntl(*socket1, F_SETFL, O_NONBLOCK);
 }
@@ -512,7 +512,9 @@ void SocketHelper::runMaster(){
     while (!packetQueue.empty()){
         auto elem = packetQueue.front();
         packetQueue.pop();
-        std::visit([socket1](auto&& arg) {
+
+        // send the packet
+        std::visit([&socket1] (auto&& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, Packet *>) {
                 // std::cout << *arg;
@@ -538,7 +540,7 @@ void SocketHelper::runMaster(){
                 // delete p->data;
                 delete p;
             }
-            else if constexpr (std::is_same_v<T, StartPacket *>){
+            else if constexpr (std::is_same_v<T, StartPacket *>) {
                 std::cout << *arg;
 
                 // send the msg
@@ -557,7 +559,7 @@ void SocketHelper::runMaster(){
                 delete p->fileName;
                 delete p;
             }
-            else if constexpr (std::is_same_v<T, EndPacket *>){
+            else if constexpr (std::is_same_v<T, EndPacket *>) {
                 std::cout << *arg;
 
                 // send the msg
@@ -568,9 +570,9 @@ void SocketHelper::runMaster(){
 
                 auto *p = reinterpret_cast<EndPacket *> (arg);
                 delete p;
-            }
-            else
+            } else {
                 std::cout << "unknown variance" << std::endl;
+            }
         }, elem);
     }
 
