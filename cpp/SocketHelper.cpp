@@ -14,7 +14,6 @@
 #include <utility>
 #include "md5.h"
 
-#define MAX_DATA_LEN 5000.0
 #define PORT_NUMBER 8080
 
 std::random_device rd; // obtain a random number from hardware
@@ -26,7 +25,7 @@ std::uniform_int_distribution<> distr(0, (int) pow(2, 31)); // define the range,
  * @param dstIp
  * @param port
  */
-void SocketHelper::setIpSettings(uint8_t *dstIp, size_t port){
+void SocketHelper::setIpSettings (uint8_t *dstIp, size_t port){
     this->dstIpAddr = new sockaddr_in;
     this->dstIpAddr->sin_family = AF_INET;
     this->dstIpAddr->sin_port = htons(port);
@@ -45,7 +44,7 @@ void SocketHelper::setOutputDirPath (std::string outDir){
  * @param tId
  * @param seqNum
  */
-void SocketHelper::fillPacketHeader(PacketHeader *pHeader, uint16_t tId, uint32_t seqNum){
+void SocketHelper::fillPacketHeader (PacketHeader *pHeader, uint16_t tId, uint32_t seqNum){
     pHeader->transmissionId = tId;
     pHeader->sequenceNumber = seqNum;
 }
@@ -84,7 +83,7 @@ void SocketHelper::fillEndPacket (EndPacket *packet, PacketHeader *packetHeader,
  * increase the sequence number by 1 (each packet has increasing sequence numbers
  * @param header
  */
-void SocketHelper::increaseSequenceNumber(PacketHeader *header) {
+void SocketHelper::increaseSequenceNumber (PacketHeader *header) {
     header->sequenceNumber++;
 }
 
@@ -108,7 +107,7 @@ void SocketHelper::calcChecksum (EndPacket *endPacket, uint8_t *data, size_t dat
     md5_o.finish(endPacket->checksum);
 }
 
-bool SocketHelper::savePacketsToFile(StartPacket *startPacket, Packet *packets) {
+bool SocketHelper::savePacketsToFile (StartPacket *startPacket, Packet *packets) {
     size_t n = startPacket->sequenceNumberMax - startPacket->packetHeader.sequenceNumber - 1;
 
     // create output file dir from received filename and stored file path
@@ -222,70 +221,172 @@ bool SocketHelper::pushToPacketQueue(packetVariant packet) {
  * @return true if success, false if fail
  */
 bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len){
-    auto *p = new IncomingPacket;
+    if (len < sizeof(PacketHeader))
+        // packets seems to be short...
+        return false;
 
-    memcpy(p->buffer, buffer, len);
-    p->len = len;
+    // check if there is an open transmission existing in the transmission vector
+    for (auto i : incomingTransmission){
+        auto packet = reinterpret_cast<StartPacket *> (&i->transmission.front());
 
-    incomingPacketList.push_back(p);
+        // check if the packet belongs to the current transmission
+        if (packet->packetHeader.sequenceNumber > reinterpret_cast<PacketHeader *> (buffer)->sequenceNumber
+            || packet->sequenceNumberMax < reinterpret_cast<PacketHeader *> (buffer)->sequenceNumber){
+            continue;
+        }
+
+        // packet is of this transmission, adding it
+        // separating last packet from normal packet
+        if (packet->sequenceNumberMax == reinterpret_cast<PacketHeader *> (buffer)->sequenceNumber) {
+            auto *ep = new EndPacket {};
+            memcpy(ep, buffer, sizeof(EndPacket));
+            i->transmission.emplace_back(ep);
+
+            // it's the last packet of this transmission
+            i->transmissionComplete = true;
+        }
+        else{
+            // create a new Packet and copy the data from the buffer into the packet
+            auto *p = new Packet {};
+            p->dataLen = len - sizeof(PacketHeader);
+            auto dataPtr = (uint8_t *) calloc (sizeof(uint8_t), p->dataLen);
+            memcpy(&p->packetHeader, buffer, sizeof(PacketHeader));
+            memcpy(dataPtr, buffer + sizeof(PacketHeader), p->dataLen);
+
+            // push the packet to the transmission vector
+            i->transmission.emplace_back(p);
+        }
+        return true;
+    }
+
+    if (len < sizeof(StartPacket))
+        // packet is too short to be a Start Packet...
+        return false;
+
+    // if the packet wasn't added to an existing transmission, it ought
+    // to be a new transmission
+    auto t = new Transmission{};
+
+    // create a new StartPacket and copy the data into it
+    auto *sp = new StartPacket {};
+    memcpy(&sp->packetHeader, buffer, sizeof(PacketHeader));
+    sp->sequenceNumberMax = reinterpret_cast<StartPacket *> (buffer)->sequenceNumberMax;
+
+    // calculate the length of the filename
+    sp->nameLen = len - sizeof(PacketHeader) - sizeof(uint32_t);
+    // create an uint8_t array and copy the filename into the allocated storage
+    auto fileNamePtr = (uint8_t *) calloc (sizeof(uint8_t), sp->nameLen);
+    memcpy(fileNamePtr, buffer + len - sp->nameLen, sp->nameLen);
+
+
+    // load the data into the transmission struct
+    t->transmissionComplete = false;
+    memcpy(&t->header, buffer, sizeof(PacketHeader));
+    t->sequenceNumMax = reinterpret_cast<StartPacket *> (buffer)->sequenceNumberMax;
+    t->transmission.emplace_back(sp);
+    t->openTime = std::chrono::system_clock::now(); // add the time when the transmission first appears
+
+    // push the transmission to the transmission vector
+    incomingTransmission.push_back(t);
     return true;
 }
 
+/**
+ * check all transmissions for finished and timed out transmissions
+ * calls processIncomingMsg for every finished transmission
+ */
+void SocketHelper::checkFinishedTransmission(){
+    // check each transmission in the transmission vector for a finished
+    // or a timed out transmission
+    ssize_t count = 0;
+
+    for (auto i : incomingTransmission){
+        if (i->transmissionComplete) {
+            // this transmission is complete, process it
+            processIncomingMsg(i);
+
+            // make sure all packets and the vector element itself are deleted
+            // erase the packets in the transmission vector
+            i->transmission.erase(i->transmission.begin(), i->transmission.end());
+            // erase the transmission from the incoming transmission vector
+            incomingTransmission.erase(incomingTransmission.begin() + count);
+        }
+        else if ((double) (std::chrono::system_clock::now() - i->openTime).count() * 1000 > PACKET_TIMEOUT) {
+            // the packet timed out, remove it
+
+            // erase the packets in the transmission vector
+            i->transmission.erase(i->transmission.begin(), i->transmission.end());
+            // erase the transmission from the incoming transmission vector
+            incomingTransmission.erase(incomingTransmission.begin() + count);
+        }
+
+        count++;
+    }
+}
+
+// TODO: make code more resource saving by not copying every packet into a packet and use the transmission vector
 /**
  * concatenate incoming messages to readable packages
  * each incoming packet is one packet of the transmission
  * convert them one after another to a packet and search
  * for the final packet
  */
-void SocketHelper::processIncomingMsg(){
-    // load the first packet; calculate the amount of packets from the start packet
-    IncomingPacket *first = incomingPacketList.front();
+void SocketHelper::processIncomingMsg(Transmission *t) {
+    // load the first packet
+    StartPacket *startPacket;
 
-    StartPacket startPacket;
-    // copy the packetHeader and the sequenceNumberMax
-    memcpy(&startPacket, first, sizeof(PacketHeader) + sizeof(uint32_t));
+    packetVariant first = t->transmission.front();
+    std::visit([&startPacket](auto &&arg) {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (!std::is_same_v<T, StartPacket *>) {
+            // houston we have a problem
+            std::cerr << "this transmission has the wrong type" << std::endl;
+            return;
+        }
 
-    startPacket.fileName = reinterpret_cast<uint8_t *>(&first->buffer[sizeof(uint32_t) + sizeof(PacketHeader)]);
-    startPacket.nameLen = first->len - sizeof(PacketHeader) - sizeof(uint32_t);
+        // if the first packet is of type StartPacket
+        startPacket = reinterpret_cast<StartPacket *> (arg);
+    }, first);
 
     // calculate the amount of packets
-    size_t n = startPacket.sequenceNumberMax - startPacket.packetHeader.sequenceNumber;
-
-    if (incomingPacketList.size() < n + 1){
-        // apparently not all packets have yet arrived. waiting for all to arrive
-        return;
-    }
+    size_t n = startPacket->sequenceNumberMax - startPacket->packetHeader.sequenceNumber;
 
     // copy all packets from the incoming vector
+    // TODO: check why unreachable code
     Packet packets[n - 1];
-    for (int i = 1; i < n; i++){
-        memcpy(&packets[i - 1], incomingPacketList[i], sizeof(PacketHeader));
-        packets[i - 1].data = reinterpret_cast<uint8_t *>(&incomingPacketList[i]->buffer[sizeof(PacketHeader)]);
-        packets[i - 1].dataLen = incomingPacketList[i]->len - sizeof(PacketHeader);
+    for (int i = 1; i < n; i++) {
+        if (!std::holds_alternative<Packet *>(t->transmission[i])) {
+            // if the next element isn't of type packet, there seems to be an issue
+            std::cerr << "packet is of type <EndPacket *> not <Packet *>" << std::endl;
+            return;
+        }
+
+        // copy the packet (or better the header and the pointers)
+        memcpy(&packets[i - 1], &t->transmission[i], sizeof(Packet));
     }
+
     // the packets could be in wrong order
     sortPackets(packets, n - 1);
 
     // the nth packet is the end packet
     EndPacket endPacket;
-    memcpy(&endPacket, incomingPacketList[n], sizeof(EndPacket));
+    memcpy(&endPacket, &t->transmission[n], sizeof(EndPacket));
 
     // if the packets or the checksum doesn't match
-   if (!checkCorrectnessOfPackets(&startPacket, packets, &endPacket)){
+    bool correct = checkCorrectnessOfPackets(startPacket, packets, &endPacket);
+    if (!correct) {
         std::cerr << "checksum wrong or other problem with packets, deleting and skipping" << std::endl;
+        return;
     }
 
+    // output the packets
     std::cout << "incoming packages: " << startPacket;
-    for (auto i : packets){
+    for (auto i: packets) {
         std::cout << i;
     }
     std::cout << endPacket;
 
-    savePacketsToFile(&startPacket, packets);
-
-    for (int i = 0; i < n; i++) {
-        incomingPacketList.erase(incomingPacketList.begin());
-    }
+    savePacketsToFile(startPacket, packets);
 }
 
 /**
@@ -411,7 +512,7 @@ void SocketHelper::runMaster(){
     while (!packetQueue.empty()){
         auto elem = packetQueue.front();
         packetQueue.pop();
-        std::visit([&socket1](auto&& arg) {
+        std::visit([socket1](auto&& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, Packet *>) {
                 // std::cout << *arg;
@@ -429,7 +530,7 @@ void SocketHelper::runMaster(){
                     n = send(socket1, packetAsArray,
                              sizeof(PacketHeader) + reinterpret_cast<Packet *> (arg)->dataLen, 0);
                     maxTryCount++;
-                } while (n < 0 && maxTryCount < 10);
+                } while (n < 0 && maxTryCount < 10 && usleep(10000)==0);
 
                 std::cout << "packet sent " << n << " bytes" << std::endl;
 
@@ -506,7 +607,7 @@ void SocketHelper::runSlave(const bool *run){
         // msg comes in multiple goes
         // have to concatenate messages
         pushToIncomingQueue(buffer, n);
-        processIncomingMsg();
+        checkFinishedTransmission();
     }
 
     // closing socket

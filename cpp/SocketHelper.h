@@ -15,13 +15,13 @@
 
 class SocketHelper {
 private:
-    using packetVariant = std::variant<Packet *, StartPacket *, EndPacket *>;
     std::queue<packetVariant> packetQueue;
     uint16_t transmissionId = 0;
     bool msgSend = true;
     struct sockaddr_in serv_addr;
     struct sockaddr_in *dstIpAddr = nullptr;
-    std::vector<IncomingPacket *> incomingPacketList;
+    // std::vector<IncomingPacket *> incomingPacketList;
+    std::vector<Transmission *> incomingTransmission;
     std::string outputDir;
 
     static void fillPacketHeader(PacketHeader *packetHeader, uint16_t tId, uint32_t seqNum);
@@ -43,7 +43,8 @@ private:
     void runMaster();
     void runSlave(const bool *run);
 
-    void processIncomingMsg();
+    void processIncomingMsg(Transmission *t);
+    void checkFinishedTransmission();
 
     static void sortPackets(Packet *packets, size_t n);
 

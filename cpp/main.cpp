@@ -111,7 +111,7 @@ int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8
             // specified port
             char *portAsString = argv[i + 1];
             *port = strtol(portAsString, nullptr, 10);
-            std::cout << "input port: " << *port << std::endl;
+            // std::cout << "input port: " << *port << std::endl;
 
             // globally skip the value after -p
             i++;
@@ -120,7 +120,7 @@ int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8
             // specified ip, only used when sending
             char *ipAsString = argv[i + 1];
 
-            std::cout << "input ip addr: ";
+            // std::cout << "input ip addr: ";
             // convert dot notated addr to 4 byte addr
             for (auto j = 0; j < 4; j++){
                 // find dot, convert data up to dot
@@ -141,11 +141,11 @@ int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8
                 memcpy(ip, ipAsString, pos - ipAsString);
                 auto tmp = (uint8_t) strtol(ip, nullptr, 10);
                 ipAddr[j] = tmp;
-                std::cout << (int) ipAddr[j] << ":";
+                // std::cout << (int) ipAddr[j] << ":";
                 ipAsString = pos + 1;
             }
 
-            std::cout << std::endl;
+            // std::cout << std::endl;
             // globally skip the value after --ip
             i++;
         }
