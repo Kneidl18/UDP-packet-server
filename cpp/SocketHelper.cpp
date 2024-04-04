@@ -513,67 +513,72 @@ void SocketHelper::runMaster(){
         auto elem = packetQueue.front();
         packetQueue.pop();
 
-        // send the packet
-        std::visit([&socket1] (auto&& arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, Packet *>) {
-                // std::cout << *arg;
+        try {
+            // send the packet
+            std::visit([&socket1](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
 
-                // send the msg
-                char packetAsArray[BUFFER_LEN];
-                memcpy(packetAsArray, arg, sizeof(PacketHeader));
-                for (int i = 0; i < reinterpret_cast<Packet *> (arg)->dataLen; i++){
-                    packetAsArray[i + sizeof(PacketHeader)] = reinterpret_cast<Packet *> (arg)->data[i];
+                if constexpr (std::is_same_v<T, Packet *>) {
+                    // std::cout << *arg;
+
+                    // send the msg
+                    char packetAsArray[BUFFER_LEN + sizeof(Packet)];
+                    memcpy(packetAsArray, arg, sizeof(PacketHeader));
+                    for (int i = 0; i < reinterpret_cast<Packet *> (arg)->dataLen; i++) {
+                        packetAsArray[i + sizeof(PacketHeader)] = reinterpret_cast<Packet *> (arg)->data[i];
+                    }
+
+                    ssize_t n;
+                    int maxTryCount = 0; // to avoid an endless loop
+                    do {
+                        n = send(socket1, packetAsArray,
+                                 sizeof(PacketHeader) + reinterpret_cast<Packet *> (arg)->dataLen, 0);
+                        maxTryCount++;
+                    } while (n < 0 && maxTryCount < 10 && usleep(10000) == 0);
+
+                    std::cout << "packet sent " << n << " bytes" << std::endl;
+
+                    auto *p = reinterpret_cast<Packet *> (arg);
+                    // delete p->data;
+                    delete p;
+                } else if constexpr (std::is_same_v<T, StartPacket *>) {
+                    std::cout << *arg;
+
+                    // send the msg
+                    char packetAsArray[BUFFER_LEN];
+                    // load packetHeader and sequence number into buffer
+                    memcpy(packetAsArray, arg, sizeof(PacketHeader) + sizeof(uint32_t));
+                    for (int i = 0; i < reinterpret_cast<StartPacket *> (arg)->nameLen; i++) {
+                        packetAsArray[i + sizeof(PacketHeader) + sizeof(uint32_t)] =
+                                reinterpret_cast<StartPacket *> (arg)->fileName[i];
+                    }
+                    ssize_t n = send(socket1, packetAsArray,
+                                     sizeof(uint32_t) + sizeof(PacketHeader) +
+                                     reinterpret_cast<StartPacket *> (arg)->nameLen, 0);
+
+                    std::cout << "start packet sent " << n << " bytes" << std::endl;
+                    auto *p = reinterpret_cast<StartPacket *> (arg);
+                    delete p->fileName;
+                    delete p;
+                } else if constexpr (std::is_same_v<T, EndPacket *>) {
+                    std::cout << *arg;
+
+                    // send the msg
+                    char packetAsArray[sizeof (EndPacket)];
+                    memcpy(packetAsArray, arg, sizeof(EndPacket));
+                    ssize_t n = send(socket1, packetAsArray, sizeof(EndPacket), 0);
+                    std::cout << "end packet sent " << n << " bytes" << std::endl;
+
+                    auto *p = reinterpret_cast<EndPacket *> (arg);
+                    delete p;
+                } else {
+                    std::cout << "unknown variance" << std::endl;
                 }
-
-                ssize_t n;
-                int maxTryCount = 0; // to avoid an endless loop
-                do {
-                    n = send(socket1, packetAsArray,
-                             sizeof(PacketHeader) + reinterpret_cast<Packet *> (arg)->dataLen, 0);
-                    maxTryCount++;
-                } while (n < 0 && maxTryCount < 10 && usleep(10000)==0);
-
-                std::cout << "packet sent " << n << " bytes" << std::endl;
-
-                auto *p = reinterpret_cast<Packet *> (arg);
-                // delete p->data;
-                delete p;
-            }
-            else if constexpr (std::is_same_v<T, StartPacket *>) {
-                std::cout << *arg;
-
-                // send the msg
-                char packetAsArray[BUFFER_LEN];
-                // load packetHeader and sequence number into buffer
-                memcpy(packetAsArray, arg, sizeof(PacketHeader) + sizeof(uint32_t));
-                for (int i = 0; i < reinterpret_cast<StartPacket *> (arg)->nameLen; i++){
-                    packetAsArray[i + sizeof(PacketHeader) + sizeof(uint32_t)] =
-                            reinterpret_cast<StartPacket *> (arg)->fileName[i];
-                }
-                ssize_t n = send(socket1, packetAsArray,
-                     sizeof(uint32_t) + sizeof(PacketHeader) + reinterpret_cast<StartPacket *> (arg)->nameLen, 0);
-
-                std::cout << "start packet sent " << n << " bytes" << std::endl;
-                auto *p = reinterpret_cast<StartPacket *> (arg);
-                delete p->fileName;
-                delete p;
-            }
-            else if constexpr (std::is_same_v<T, EndPacket *>) {
-                std::cout << *arg;
-
-                // send the msg
-                char packetAsArray[BUFFER_LEN];
-                memcpy(packetAsArray, arg, sizeof(EndPacket ));
-                ssize_t n = send(socket1, packetAsArray, sizeof(EndPacket), 0);
-                std::cout << "end packet sent " << n << " bytes" << std::endl;
-
-                auto *p = reinterpret_cast<EndPacket *> (arg);
-                delete p;
-            } else {
-                std::cout << "unknown variance" << std::endl;
-            }
-        }, elem);
+            }, elem);
+        }
+        catch (std::exception &e){
+            std::cout << "exception on send visit: " << e.what() << std::endl;
+        }
     }
 
     msgSend = true;
