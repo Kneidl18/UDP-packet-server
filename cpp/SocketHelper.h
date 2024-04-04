@@ -32,6 +32,7 @@ private:
 
     static void calcChecksum(EndPacket *endPacket, uint8_t *data, size_t dataLen, uint8_t *fileName,
                       size_t fileNameLen);
+    void calcChecksumFromTransmission(Transmission *transmission, EndPacket *endPacket);
     static bool checkCorrectnessOfPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket);
 
     bool pushToPacketQueue(packetVariant packet);
@@ -60,6 +61,9 @@ public:
     void setIpSettings(uint8_t *dstIp, size_t port);
 
     void setOutputDirPath(std::string outDir);
+
+    void calcChecksumFromPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket, size_t packetAmount);
+
 };
 
 

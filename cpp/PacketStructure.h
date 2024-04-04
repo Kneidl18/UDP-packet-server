@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <bitset>
 
-#define MAX_DATA_LEN 5000.0
+#define MAX_DATA_LEN 6000.0
 #define BUFFER_LEN (uint) MAX_DATA_LEN
 #define PACKET_TIMEOUT 5000 // millisecond a packet is kept before it's deleted from the vector
 
