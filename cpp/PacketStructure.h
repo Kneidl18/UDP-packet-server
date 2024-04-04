@@ -8,7 +8,9 @@
 #include <cstdint>
 #include <bitset>
 
-#define BUFFER_LEN 65527
+#define MAX_DATA_LEN 6000.0
+#define BUFFER_LEN (uint) MAX_DATA_LEN
+#define PACKET_TIMEOUT 50000 // millisecond a packet is kept before it's deleted from the vector
 
 typedef struct{
     uint16_t transmissionId;
@@ -37,6 +39,17 @@ typedef struct{
     char buffer[BUFFER_LEN];
     size_t len;
 } IncomingPacket;
+
+using packetVariant = std::variant<Packet *, StartPacket *, EndPacket *>;
+
+typedef struct{
+    PacketHeader header;
+    uint32_t sequenceNumMax;
+    std::vector<packetVariant> transmission;
+    bool transmissionComplete;
+    std::chrono::system_clock::time_point openTime;
+} Transmission;
+
 
 inline std::ostream& operator << (std::ostream& o, Packet& p) {
     std::bitset<16> trans(p.packetHeader.transmissionId);
@@ -99,4 +112,5 @@ inline std::ostream& operator << (std::ostream& o, EndPacket & p) {
 
     return o;
 }
+
 #endif //PP_PACKETSTRUCTURE_H
