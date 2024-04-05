@@ -23,6 +23,7 @@ private:
     // std::vector<IncomingPacket *> incomingPacketList;
     std::vector<Transmission *> incomingTransmission;
     std::string outputDir;
+    bool verboseOutput;
 
     static void fillPacketHeader(PacketHeader *packetHeader, uint16_t tId, uint32_t seqNum);
     static void fillPacket(Packet *packet, PacketHeader *packetHeader, uint8_t *data, size_t dataLen);
@@ -36,7 +37,7 @@ private:
     // void calcChecksumFromPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket, size_t packetAmount);
 
     static bool checkCorrectnessOfPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket);
-    bool checkCorrectnessOfTransmission(Transmission *t);
+    static bool checkCorrectnessOfTransmission(Transmission *t);
 
     bool pushToPacketQueue(packetVariant packet);
     bool pushToIncomingQueue(char *buffer, ssize_t len);
@@ -51,7 +52,7 @@ private:
     void checkFinishedTransmission();
 
     static void sortPackets(Packet *packets, size_t n);
-    void sortPackets(Transmission *t);
+    static void sortPackets(Transmission *t);
 
     bool savePacketsToFile(StartPacket *startPacket, Packet *packets);
     bool saveTransmissionToFile(Transmission *t);
@@ -67,6 +68,8 @@ public:
 
     void setOutputDirPath(std::string outDir);
 
+    void enableVerboseOutput() { verboseOutput = true; }
+    void disableVerboseOutput() { verboseOutput = false; }
 };
 
 
