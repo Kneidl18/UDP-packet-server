@@ -9,7 +9,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class Receiver{
-    private static final int MAX_PACKET_SIZE = 5 * 1024; // 60 KB max. Paketgröße
+    private static final int MAX_PACKET_SIZE = 9000; // 60 KB max. Paketgröße
+    private static final int MAX_PACKET_HEADER_SIZE = 10;
     private static String fileName = null;
     private static final int DESTINATION_PORT = 3000;
     private static FileOutputStream fileOutputStream = null;
@@ -27,7 +28,7 @@ public class Receiver{
 
     private static void receiveFile(DatagramSocket socket) throws IOException, NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] buffer = new byte[MAX_PACKET_SIZE];
+        byte[] buffer = new byte[MAX_PACKET_SIZE + MAX_PACKET_HEADER_SIZE];
         DatagramPacket packet;
 
         while (true) {
