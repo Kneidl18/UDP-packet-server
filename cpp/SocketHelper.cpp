@@ -245,7 +245,7 @@ void SocketHelper::sortPackets (Packet *packets, size_t n){
  * @param b second packet
  * @return a < b (sequence number)
  */
-bool compareBySequenceNumber(packetVariant &a, packetVariant &b){
+bool compareBySequenceNumber(PacketVariant &a, PacketVariant &b){
     return std::get<Packet *> (a)->packetHeader.sequenceNumber <
             std::get<Packet *> (b)->packetHeader.sequenceNumber;
 }
@@ -349,7 +349,7 @@ bool SocketHelper::checkCorrectnessOfPackets (StartPacket *startPacket, Packet *
  * @param packet pointer to the packet to be pushed
  * @return true if success, false if fail
  */
-bool SocketHelper::pushToPacketQueue(packetVariant packet) {
+bool SocketHelper::pushToPacketQueue(PacketVariant packet) {
     packetQueue.push(packet);
     return packetQueue.back() == packet;
 }

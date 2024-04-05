@@ -12,6 +12,9 @@
 #define BUFFER_LEN (uint) MAX_DATA_LEN
 #define PACKET_TIMEOUT 50000 // millisecond a packet is kept before it's deleted from the vector
 
+/**
+ * structs for the packets
+ */
 typedef struct{
     uint16_t transmissionId;
     uint32_t sequenceNumber;
@@ -35,22 +38,19 @@ typedef struct{
     uint8_t checksum[16];
 } EndPacket;
 
-typedef struct{
-    char buffer[BUFFER_LEN];
-    size_t len;
-} IncomingPacket;
-
-using packetVariant = std::variant<Packet *, StartPacket *, EndPacket *>;
+using PacketVariant = std::variant<Packet *, StartPacket *, EndPacket *>;
 
 typedef struct{
     PacketHeader header;
     uint32_t sequenceNumMax;
-    std::vector<packetVariant> transmission;
+    std::vector<PacketVariant> transmission;
     bool transmissionComplete;
     std::chrono::system_clock::time_point openTime;
 } Transmission;
 
-
+/**
+ * overwrite << to pretty-print a packet
+ */
 inline std::ostream& operator << (std::ostream& o, Packet& p) {
     std::bitset<16> trans(p.packetHeader.transmissionId);
     std::bitset<32> sequence(p.packetHeader.sequenceNumber);
@@ -74,6 +74,9 @@ inline std::ostream& operator << (std::ostream& o, Packet& p) {
     return o;
 }
 
+/**
+ * overwrite << to pretty-print a packet
+ */
 inline std::ostream& operator << (std::ostream& o, StartPacket & p) {
     std::bitset<16> trans(p.packetHeader.transmissionId);
     std::bitset<32> sequence(p.packetHeader.sequenceNumber);
@@ -90,6 +93,9 @@ inline std::ostream& operator << (std::ostream& o, StartPacket & p) {
     return o;
 }
 
+/**
+ * overwrite << to pretty-print a packet
+ */
 inline std::ostream& operator << (std::ostream& o, EndPacket & p) {
     std::bitset<16> trans(p.packetHeader.transmissionId);
     std::bitset<32> sequence(p.packetHeader.sequenceNumber);
