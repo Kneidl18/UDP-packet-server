@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <bitset>
 
-#define MAX_DATA_LEN 6000.0
+#define MAX_DATA_LEN 9000.0
 #define BUFFER_LEN (uint) MAX_DATA_LEN
 #define PACKET_TIMEOUT 50000 // millisecond a packet is kept before it's deleted from the vector
 
@@ -94,7 +94,7 @@ inline std::ostream& operator << (std::ostream& o, EndPacket & p) {
     std::bitset<16> trans(p.packetHeader.transmissionId);
     std::bitset<32> sequence(p.packetHeader.sequenceNumber);
 
-    o << "end packet: tId->" << p.packetHeader.transmissionId << "\tsNr->" << p.packetHeader.sequenceNumber;
+    o << "end packet:   tId->" << p.packetHeader.transmissionId << "\tsNr->" << p.packetHeader.sequenceNumber;
     o << "\tchecksum->";
     for (auto i : p.checksum)
         o << std::hex << (int) i;
