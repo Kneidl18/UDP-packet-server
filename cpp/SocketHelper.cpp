@@ -156,6 +156,7 @@ bool SocketHelper::saveTransmissionToFile (Transmission *t) {
         std::cerr << "couldn't open file to store incoming message" << std::endl;
         return false;
     }
+
     for (int i = 1; i < t->transmission.size() - 1; i++){
         for (int j = 0; j < std::get<Packet *> (t->transmission[i])->dataLen; j++)
             output_file << std::get<Packet *> (t->transmission[i])->data[j];
@@ -220,6 +221,12 @@ void SocketHelper::sortPackets (Packet *packets, size_t n){
     }
 }
 
+/**
+ * helper to sort packets by the sequence number
+ * @param a first packet
+ * @param b second packet
+ * @return a < b (sequence number)
+ */
 bool compareBySequenceNumber(packetVariant &a, packetVariant &b){
     return std::get<Packet *> (a)->packetHeader.sequenceNumber <
             std::get<Packet *> (b)->packetHeader.sequenceNumber;
@@ -435,7 +442,8 @@ void SocketHelper::checkFinishedTransmission(){
             // erase the transmission from the incoming transmission vector
             incomingTransmission.erase(incomingTransmission.begin() + count);
             count--;
-            std::cout << "received and processed a complete transmission" << std::endl;
+            if (verboseOutput)
+                std::cout << "received and processed a complete transmission" << std::endl;
         }
         else if ((double) (std::chrono::system_clock::now() - i->openTime).count() * 1000 > PACKET_TIMEOUT) {
             // the packet timed out, remove it
@@ -445,14 +453,14 @@ void SocketHelper::checkFinishedTransmission(){
             // erase the transmission from the incoming transmission vector
             incomingTransmission.erase(incomingTransmission.begin() + count);
             count--;
-            std::cout << "delete a transmission due to timeout" << std::endl;
+            if (verboseOutput)
+                std::cout << "delete a transmission due to timeout" << std::endl;
         }
 
         count++;
     }
 }
 
-// TODO: make code more resource saving by not copying every packet into a packet and use the transmission vector
 /**
  * concatenate incoming messages to readable packages
  * each incoming packet is one packet of the transmission
@@ -469,13 +477,15 @@ void SocketHelper::processIncomingMsg(Transmission *t) {
         return;
     }
 
-    // print the packets for testing
-    std::cout << "incoming packages: " << std::get<StartPacket *> (t->transmission.front());
-    std::cout << "amount of packets: " << t->transmission.size() - 2 << std::endl;
-    /*for (auto i = 1; i < t->transmission.size() - 1; i++){
-        std::cout << std::get<Packet *> (t->transmission[i]);
-    }*/
-    std::cout << std::get<EndPacket *> (t->transmission[t->transmission.size() - 1]);
+    if (verboseOutput) {
+        // print the packets for testing
+        std::cout << "incoming packages: " << *std::get<StartPacket *>(t->transmission.front());
+        std::cout << "amount of packets: " << t->transmission.size() - 2 << std::endl;
+        /*for (auto i = 1; i < t->transmission.size() - 1; i++){
+            std::cout << std::get<Packet *> (t->transmission[i]);
+        }*/
+        std::cout << *std::get<EndPacket *>(t->transmission[t->transmission.size() - 1]);
+    }
 
     saveTransmissionToFile(t);
 }
@@ -576,14 +586,16 @@ void SocketHelper::createSocketRecv(int *socket1) {
             std::cerr << "ERROR on binding" << std::endl;
             exit(1);
         }
-        std::cout << "listening on: " << inet_ntoa(serv_addr.sin_addr) << " port " << ntohs(serv_addr.sin_port) << std::endl;
+        if (verboseOutput)
+            std::cout << "listening on: " << inet_ntoa(serv_addr.sin_addr) << " port " << ntohs(serv_addr.sin_port) << std::endl;
     }
     else{
         if (bind (*socket1, (struct sockaddr *) dstIpAddr, sizeof(serv_addr)) < 0){
             std::cerr << "ERROR on binding" << std::endl;
             exit(1);
         }
-        std::cout << "listening on: " << inet_ntoa(dstIpAddr->sin_addr) << " port " << ntohs(dstIpAddr->sin_port) << std::endl;
+        if (verboseOutput)
+            std::cout << "listening on: " << inet_ntoa(dstIpAddr->sin_addr) << " port " << ntohs(dstIpAddr->sin_port) << std::endl;
     }
 
     listen(*socket1, 5);
@@ -595,7 +607,7 @@ void SocketHelper::runMaster(){
     int socket1;
     createSocketSend(&socket1);
 
-    if (dstIpAddr != nullptr) {
+    if (verboseOutput && dstIpAddr != nullptr) {
         std::cout << "sending packet to: addr->" << inet_ntoa(dstIpAddr->sin_addr);
         std::cout << " port->" << ntohs(dstIpAddr->sin_port) << std::endl;
     }
@@ -606,7 +618,7 @@ void SocketHelper::runMaster(){
 
         try {
             // send the packet
-            std::visit([&socket1](auto &&arg) {
+            std::visit([&socket1, this](auto &&arg) {
                 using T = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<T, Packet *>) {
@@ -628,17 +640,19 @@ void SocketHelper::runMaster(){
                             maxTryCount++;
                         }
                         catch (std::exception &e){
-                            std::cout << e.what() << std::endl;
+                            std::cerr << e.what() << std::endl;
                         }
                     } while (n < 0 && maxTryCount < 10 && usleep(10000) == 0);
 
-                    std::cout << "packet sent " << n << " bytes" << std::endl;
+                    if (verboseOutput)
+                        std::cout << "packet sent " << n << " bytes" << std::endl;
 
                     auto *p = reinterpret_cast<Packet *> (arg);
                     // delete p->data;
                     delete p;
                 } else if constexpr (std::is_same_v<T, StartPacket *>) {
-                    std::cout << *arg;
+                    if (verboseOutput)
+                        std::cout << *arg;
 
                     // send the msg
                     char packetAsArray[BUFFER_LEN];
@@ -652,28 +666,31 @@ void SocketHelper::runMaster(){
                                      sizeof(uint32_t) + sizeof(PacketHeader) +
                                      reinterpret_cast<StartPacket *> (arg)->nameLen, 0);
 
-                    std::cout << "start packet sent " << n << " bytes" << std::endl;
+                    if (verboseOutput)
+                        std::cout << "start packet sent " << n << " bytes" << std::endl;
                     auto *p = reinterpret_cast<StartPacket *> (arg);
                     delete p->fileName;
                     delete p;
                 } else if constexpr (std::is_same_v<T, EndPacket *>) {
-                    std::cout << *arg;
+                    if (verboseOutput)
+                        std::cout << *arg;
 
                     // send the msg
                     char packetAsArray[sizeof (EndPacket)];
                     memcpy(packetAsArray, arg, sizeof(EndPacket));
                     ssize_t n = send(socket1, packetAsArray, sizeof(EndPacket), 0);
-                    std::cout << "end packet sent " << n << " bytes" << std::endl;
+                    if (verboseOutput)
+                        std::cout << "end packet sent " << n << " bytes" << std::endl;
 
                     auto *p = reinterpret_cast<EndPacket *> (arg);
                     delete p;
                 } else {
-                    std::cout << "unknown variance" << std::endl;
+                    std::cerr << "unknown variance" << std::endl;
                 }
             }, elem);
         }
         catch (std::exception &e){
-            std::cout << "exception on send visit: " << e.what() << std::endl;
+            std::cerr << "exception on send visit: " << e.what() << std::endl;
         }
     }
 
@@ -683,6 +700,7 @@ void SocketHelper::runMaster(){
 void SocketHelper::runSlave(const bool *run){
     int socket1;
     createSocketRecv(&socket1);
+    sockaddr_in lastCon{};
 
     while (*run) {
         char buffer[BUFFER_LEN + sizeof(Packet)];
@@ -692,22 +710,20 @@ void SocketHelper::runSlave(const bool *run){
         ssize_t n = recvfrom(socket1, buffer, BUFFER_LEN + sizeof(Packet) - 1, 0, (struct sockaddr *) &cli_addr_sock, &cli_len);
 
         if (n < 1) {
+            // usleep(10);
             continue;
         }
 
-        /*
-        std::cout << "server: got connection from ";
-        std::cout << inet_ntoa(reinterpret_cast<sockaddr_in *> (&cli_addr_sock)->sin_addr) << " port ";
-        std::cout << ntohs(reinterpret_cast<sockaddr_in *> (&cli_addr_sock)->sin_port) << std::endl;
-         */
+        auto currentCliAddr = reinterpret_cast<sockaddr_in *> (&cli_addr_sock);
+        if (verboseOutput && lastCon.sin_port != currentCliAddr->sin_port &&
+                lastCon.sin_addr.s_addr != currentCliAddr->sin_addr.s_addr) {
 
-        /*
-        std::cout << "incoming msg: ";
-        for (int i = 0; i < n; i++) {
-            std::cout << std::hex << (int) buffer[i];
+            std::cout << "server: got connection from ";
+            std::cout << inet_ntoa(currentCliAddr->sin_addr) << " port ";
+            std::cout << ntohs(currentCliAddr->sin_port) << std::endl;
+
+            memcpy(&lastCon, currentCliAddr, sizeof(sockaddr_in));
         }
-        std::cout << std::endl;
-         */
 
         // msg comes in multiple goes
         // have to concatenate messages
@@ -729,7 +745,7 @@ void SocketHelper::run(const bool *run, Config config){
                 runSlave(run);
                 break;
             default:
-                std::cout << "server config unknown" << std::endl;
+                std::cerr << "server config unknown" << std::endl;
                 exit(1);
         }
     }

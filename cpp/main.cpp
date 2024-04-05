@@ -80,7 +80,8 @@ size_t loadData(uint8_t **data, const std::string& filePath){
  * @param argv arguments as char[]
  * @return 1 if the command is listen, 2 if the command is send
  */
-int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8_t *ipAddr, std::string *outputDirPath){
+int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8_t *ipAddr,
+              std::string *outputDirPath, bool *verbose){
     for (int i = 0; i < argc; i++){
         if (!strcmp("--listen", argv[i])) {
             // the command is listening
@@ -104,7 +105,8 @@ int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8
                 *outputDirPath += argv[i + 1];
             }
 
-            std::cout << "output filepath: " << *outputDirPath << std::endl;
+            if (*verbose)
+                std::cout << "output filepath: " << *outputDirPath << std::endl;
             i--;
         }
         else if (!strcmp("-p", argv[i])){
@@ -149,6 +151,9 @@ int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8
             // globally skip the value after --ip
             i++;
         }
+        else if (!strcmp("-v", argv[i])){
+            *verbose = true;
+        }
     }
 
     return 0;
@@ -165,9 +170,13 @@ int main(int argc, char *argv[]) {
     std::string outputDirPath;
     uint8_t dstIpAddr[4] = {0, 0, 0, 0};
     size_t port = 0;
-    int runCommand = parseArgs(argc, argv, &filePath, &port, dstIpAddr, &outputDirPath);
+    bool verbose = false;
+    int runCommand = parseArgs(argc, argv, &filePath, &port, dstIpAddr, &outputDirPath, &verbose);
 
     auto *sh = new SocketHelper();
+    if (verbose)
+        sh->enableVerboseOutput();
+
     bool run = true;
 
     if (runCommand == 1) {
@@ -184,7 +193,8 @@ int main(int argc, char *argv[]) {
             std::cin >> command;
         }
 
-        std::cout << "stopping socket listening thread" << std::endl;
+        if (verbose)
+            std::cout << "stopping socket listening thread" << std::endl;
         run = false;
         socketThreadListen.join();
     }
@@ -209,19 +219,22 @@ int main(int argc, char *argv[]) {
         // wait for the message to be sent
         while (!sh->msgOut()){}
 
-        std::cout << "stopping socket sending thread" << std::endl;
+        if (verbose)
+            std::cout << "stopping socket sending thread" << std::endl;
         run = false;
         socketThreadSending.join();
         delete data;
     }
     else{
         std::cout << "specify more commands" << std::endl;
-        std::cerr << "usage: simpleServer [-p <port>] [--ip <ip_addr>] [-o <output path>]";
+        std::cerr << "usage: simpleServer [-p <port>] [--ip <ip_addr>] [-v] [-o <output path>]";
         std::cerr << "[--listen] [--send <pathToFile>]" << std::endl;
         exit(1);
     }
 
+    if (verbose)
+        std::cout << "exit" << std::flush;
+
     delete sh;
-    std::cout << "exit" << std::flush;
     return 0;
 }
