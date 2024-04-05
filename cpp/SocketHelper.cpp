@@ -33,6 +33,10 @@ void SocketHelper::setIpSettings (uint8_t *dstIp, size_t port){
     memcpy(&this->dstIpAddr->sin_addr, dstIp, 4);
 }
 
+/**
+ * set the output directory
+ * @param outDir
+ */
 void SocketHelper::setOutputDirPath (std::string outDir){
     this->outputDir = std::move(outDir);
 }
@@ -62,6 +66,14 @@ void SocketHelper::fillPacket (Packet *packet, PacketHeader *packetHeader, uint8
     packet->dataLen = dataLen;
 }
 
+/**
+ * fill the start packet with a packet-header and a filename
+ * @param packet
+ * @param packetHeader
+ * @param n
+ * @param fileName
+ * @param nameLen
+ */
 void SocketHelper::fillStartPacket (StartPacket *packet, PacketHeader *packetHeader, size_t n, uint8_t *fileName,
                                     size_t nameLen){
     memcpy(&packet->packetHeader, packetHeader, sizeof(PacketHeader));
@@ -71,6 +83,12 @@ void SocketHelper::fillStartPacket (StartPacket *packet, PacketHeader *packetHea
     packet->nameLen = std::min(nameLen, (size_t) 256);
 }
 
+/**
+ * fill endPacket with header and checksum
+ * @param packet
+ * @param packetHeader
+ * @param checksum
+ */
 void SocketHelper::fillEndPacket (EndPacket *packet, PacketHeader *packetHeader, const uint8_t *checksum){
     memcpy(&packet->packetHeader, packetHeader, sizeof(PacketHeader));
 
@@ -384,16 +402,6 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len){
         return true;
     }
 
-    /*
-    std::cout << "sizeof packetheader: " << sizeof(PacketHeader) << std::endl;
-    std::cout << "sizeof startpacket: " << sizeof(StartPacket) << std::endl;
-    if (len < sizeof(StartPacket)){
-        // packet is too short to be a Start Packet...
-        std::cout << "packet too short to be a start Packet" << std::endl;
-        return false;
-    }
-     */
-
     // if the packet wasn't added to an existing transmission, it ought
     // to be a new transmission
     auto t = new Transmission{};
@@ -408,7 +416,6 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len){
     // create an uint8_t array and copy the filename into the allocated storage
     sp->fileName = (uint8_t *) calloc (sizeof(uint8_t), sp->nameLen);
     memcpy(sp->fileName, buffer + len - sp->nameLen, sp->nameLen);
-
 
     // load the data into the transmission struct
     t->transmissionComplete = false;
@@ -491,12 +498,12 @@ void SocketHelper::processIncomingMsg(Transmission *t) {
 }
 
 /**
- *
- * @param data
- * @param dataLen
- * @param fileName
- * @param fileNameLen
- * @return
+ * send a message to the selected ip and port
+ * @param data data to send
+ * @param dataLen length of the data to send
+ * @param fileName filename of the data
+ * @param fileNameLen length of the filename
+ * @return true if success, false otherwise
  */
 bool SocketHelper::sendMsg (uint8_t *data, size_t dataLen, uint8_t *fileName, size_t fileNameLen){
     // calculate the number of packets necessary
@@ -537,10 +544,18 @@ bool SocketHelper::sendMsg (uint8_t *data, size_t dataLen, uint8_t *fileName, si
     return true;
 }
 
+/**
+ * check if the message has been sent
+ * @return true if sent, false if not
+ */
 bool SocketHelper::msgOut() const{
     return msgSend;
 }
 
+/**
+ * create a socket for sending
+ * @param socket1 pointer to socket number
+ */
 void SocketHelper::createSocketSend(int *socket1) {
     // creating socket
     *socket1 = socket(AF_INET, SOCK_DGRAM, 0);
@@ -565,6 +580,10 @@ void SocketHelper::createSocketSend(int *socket1) {
     }
 }
 
+/**
+ * create a socket for receiving
+ * @param socket1 pointer to socker number (being replaced)
+ */
 void SocketHelper::createSocketRecv(int *socket1) {
     // create a socket:
     // socket(int domain, int type, int protocol)
@@ -603,6 +622,9 @@ void SocketHelper::createSocketRecv(int *socket1) {
     fcntl(*socket1, F_SETFL, O_NONBLOCK);
 }
 
+/**
+ * run the sending loop
+ */
 void SocketHelper::runMaster(){
     int socket1;
     createSocketSend(&socket1);
@@ -697,6 +719,10 @@ void SocketHelper::runMaster(){
     msgSend = true;
 }
 
+/**
+ * run receiving loop
+ * @param run receive as long as true
+ */
 void SocketHelper::runSlave(const bool *run){
     int socket1;
     createSocketRecv(&socket1);
@@ -735,6 +761,11 @@ void SocketHelper::runSlave(const bool *run){
     close(socket1);
 }
 
+/**
+ * run the code
+ * @param run true as long as running
+ * @param config master or slave
+ */
 void SocketHelper::run(const bool *run, Config config){
     while (*run) {
         switch (config) {
@@ -750,5 +781,3 @@ void SocketHelper::run(const bool *run, Config config){
         }
     }
 }
-
-

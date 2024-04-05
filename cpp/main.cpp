@@ -159,6 +159,12 @@ int parseArgs(int argc, char *argv[], std::string *filePath, size_t *port, uint8
     return 0;
 }
 
+/**
+ * main code^^
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char *argv[]) {
     if (argc < 2){
         std::cerr << "usage: simpleServer [-p <port>] [--ip <ip_addr>] [-o <output path>]";
