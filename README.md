@@ -29,3 +29,17 @@ Packet {
     java.MD5 (128)
 }
 ```
+
+### command line tools:
+
+- **listen** <br>
+general listen on default port 8080:
+`./PP --listen` <br>
+listen on specific port and ip (both optional): `./PP [-p <port>] [--ip <ip_addr>] --listen`<br>
+write received files to specific output directory (new dir is created if necessary): `./PP [-o <pathToDir>] --listen` <br>
+listen on port and ip and sotre to directory: `./PP [-p <port>] [--ip <ip_addr>] [-o <pathToDir>] --listen`
+- **send** <br>
+general send to default ip and port (localhost, 8080): `./PP --send <pathToFile>`<br>
+send with ip and port (both optional): `./PP [-p <port>] [--ip <ip_addr>] --send <pathToFile>` <br>
+- **verbose** <br>
+for verbose output, add `-v` to the call: ```./PP -v --listen```
