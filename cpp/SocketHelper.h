@@ -12,6 +12,8 @@
 #include <sys/socket.h>
 #include <list>
 #include "PacketStructure.h"
+#include <variant>
+#include <cstring>
 
 class SocketHelper {
 private:

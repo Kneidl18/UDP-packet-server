@@ -7,6 +7,8 @@
 
 #include <cstdint>
 #include <bitset>
+#include <variant>
+#include <chrono>
 
 #define MAX_DATA_LEN 9000.0
 #define BUFFER_LEN (uint) MAX_DATA_LEN
