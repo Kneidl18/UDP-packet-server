@@ -30,17 +30,17 @@ public class Receiver{
         MessageDigest md = MessageDigest.getInstance("MD5");
         byte[] buffer = new byte[MAX_PACKET_SIZE + MAX_PACKET_HEADER_SIZE];
         DatagramPacket packet;
-        int firstSeqNumber = 0;
-        int maxSeqNumber = 0;
+        int sequenceNumber = 0;
+        int maxSeqNumber = Integer.MAX_VALUE;
 
-        while (true) {
+        while (sequenceNumber < maxSeqNumber) {
             packet = new DatagramPacket(buffer, buffer.length);
             socket.receive(packet);
 
             byte[] receivedData = packet.getData();
             int length = packet.getLength();
-            int sequenceNumber = bytesToInt(receivedData, 2);
-            System.out.println(sequenceNumber);
+            sequenceNumber = bytesToInt(receivedData, 2);
+            //System.out.println(sequenceNumber);
 
             firstPacketCount++;
             if (length <= 266 && firstPacketCount < 2) {
@@ -49,20 +49,19 @@ public class Receiver{
                 fileName = new String(fileNameBytes, StandardCharsets.UTF_8);
                 fileName = new File(fileName).getName(); // dateiname aus pfad extrahieren
                 fileOutputStream = new FileOutputStream(fileName);
-                firstSeqNumber = bytesToInt(receivedData, 2);
                 maxSeqNumber = bytesToInt(receivedData, 6);
             }
 
+            System.out.println("Seq. Number: " + sequenceNumber);
+            /*
             if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
                 System.out.println("maxSeqNumber received: " + maxSeqNumber);
                 break;
             }
-
+            */
             fileOutputStream.write(receivedData, 6, length - 6);
-            if (sequenceNumber != 0) {
-                md.update(receivedData, 6, length - 6);
-            }
-            firstSeqNumber++;
+            md.update(receivedData, 6, length - 6);
+
         }
 
         fileOutputStream.close();
