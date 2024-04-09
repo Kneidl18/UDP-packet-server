@@ -30,6 +30,8 @@ public class Receiver{
         MessageDigest md = MessageDigest.getInstance("MD5");
         byte[] buffer = new byte[MAX_PACKET_SIZE + MAX_PACKET_HEADER_SIZE];
         DatagramPacket packet;
+        int firstSeqNumber = 0;
+        int maxSeqNumber = 0;
 
         while (true) {
             packet = new DatagramPacket(buffer, buffer.length);
@@ -40,8 +42,6 @@ public class Receiver{
             int sequenceNumber = bytesToInt(receivedData, 2);
             System.out.println(sequenceNumber);
 
-            // TODO: the first sequence number doesn't have to be 0. it is a random number in the range
-            // of possible numbers
             firstPacketCount++;
             if (length <= 266 && firstPacketCount < 2) {
                 byte[] fileNameBytes = new byte[length - 10];
@@ -49,11 +49,13 @@ public class Receiver{
                 fileName = new String(fileNameBytes, StandardCharsets.UTF_8);
                 fileName = new File(fileName).getName(); // dateiname aus pfad extrahieren
                 fileOutputStream = new FileOutputStream(fileName);
+                firstSeqNumber = bytesToInt(receivedData, 2);
+                maxSeqNumber = bytesToInt(receivedData, 6);
             }
 
             // TODO: max sequence number is the sequence number of the end-packet
-            if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
-                System.out.println("DIE LETZTE SEQUENZ!!! " + sequenceNumber);
+            if (firstSeqNumber == maxSeqNumber) {  //letztes Paket übertragen = springe aus der schleife
+                //System.out.println(maxSeqNumber);
                 break;
             }
 
@@ -61,6 +63,7 @@ public class Receiver{
             if (sequenceNumber != 0) {
                 md.update(receivedData, 6, length - 6);
             }
+            firstSeqNumber++;
         }
 
         fileOutputStream.close();
