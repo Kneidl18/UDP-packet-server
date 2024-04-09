@@ -53,9 +53,8 @@ public class Receiver{
                 maxSeqNumber = bytesToInt(receivedData, 6);
             }
 
-            // TODO: max sequence number is the sequence number of the end-packet
-            if (firstSeqNumber == maxSeqNumber) {  //letztes Paket übertragen = springe aus der schleife
-                //System.out.println(maxSeqNumber);
+            if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
+                System.out.println("maxSeqNumber received: " + maxSeqNumber);
                 break;
             }
 

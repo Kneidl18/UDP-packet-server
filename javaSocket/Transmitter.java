@@ -12,8 +12,8 @@ import java.util.Random;
 
 public class Transmitter {
 
-    private static final int MAX_PACKET_SIZE = 9 * 1024; // 5 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2.pdf/";
+    private static final int MAX_PACKET_SIZE = 9 * 1024; // 9 KB max. Übertragungsgröße pro paket
+    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2-1.pdf/";
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3000;
     private static IOException IllegalArgumentException;
@@ -56,6 +56,7 @@ public class Transmitter {
         } else {
             throw IllegalArgumentException;
         }
+        System.arraycopy(transIDBytes, 0, firstPaket,0, 2);
         System.arraycopy(seqNumberBytes, 0, firstPaket, 2, 4); // kopiere sequence number in data[]
         System.arraycopy(maxSeqNumber, 0, firstPaket, 6, 4); // kopiere max sequence number in data[]
         System.arraycopy(fileNameBytes, 0, firstPaket, 10, fileNameBytes.length); // kopiere file name in data[]
