@@ -53,6 +53,7 @@ public class Receiver{
 
             // TODO: max sequence number is the sequence number of the end-packet
             if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
+                System.out.println(sequenceNumber);
                 break;
             }
 
@@ -65,7 +66,7 @@ public class Receiver{
         fileOutputStream.close();
 
         byte[] mdBytes = md.digest();
-        System.out.println(STR."Received MD5 checksum: \{bytesToHex(mdBytes)}");
+        System.out.println("Received MD5 checksum: " + bytesToHex(mdBytes));
     }
 
     private static String bytesToHex(byte[] bytes) {
