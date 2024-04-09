@@ -53,7 +53,7 @@ public class Receiver{
 
             // TODO: max sequence number is the sequence number of the end-packet
             if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
-                System.out.println("DIE LETZTE SEQUENZ!!!");
+                System.out.println("DIE LETZTE SEQUENZ!!! " + sequenceNumber);
                 break;
             }
 
