@@ -41,3 +41,5 @@ listen on port and ip and sotre to directory: `./PP [-p <port>] [--ip <ip_addr>]
 - **send** <br>
 general send to default ip and port (localhost, 8080): `./PP --send <pathToFile>`<br>
 send with ip and port (both optional): `./PP [-p <port>] [--ip <ip_addr>] --send <pathToFile>` <br>
+- **verbose** <br>
+for verbose output, add `-v` to the call: ```./PP -v --listen```

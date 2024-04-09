@@ -12,17 +12,19 @@
 #include <sys/socket.h>
 #include <list>
 #include "PacketStructure.h"
+#include <variant>
+#include <cstring>
 
 class SocketHelper {
 private:
-    using packetVariant = std::variant<Packet *, StartPacket *, EndPacket *>;
-    std::queue<packetVariant> packetQueue;
+    std::queue<PacketVariant> packetQueue;
     uint16_t transmissionId = 0;
     bool msgSend = true;
     struct sockaddr_in serv_addr;
     struct sockaddr_in *dstIpAddr = nullptr;
-    std::vector<IncomingPacket *> incomingPacketList;
+    std::vector<Transmission *> incomingTransmission;
     std::string outputDir;
+    bool verboseOutput;
 
     static void fillPacketHeader(PacketHeader *packetHeader, uint16_t tId, uint32_t seqNum);
     static void fillPacket(Packet *packet, PacketHeader *packetHeader, uint8_t *data, size_t dataLen);
@@ -32,9 +34,12 @@ private:
 
     static void calcChecksum(EndPacket *endPacket, uint8_t *data, size_t dataLen, uint8_t *fileName,
                       size_t fileNameLen);
-    static bool checkCorrectnessOfPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket);
+    static void calcChecksumFromTransmission(Transmission *transmission, EndPacket *endPacket);
 
-    bool pushToPacketQueue(packetVariant packet);
+    static bool checkCorrectnessOfPackets(StartPacket *startPacket, Packet *packets, EndPacket *endPacket);
+    static bool checkCorrectnessOfTransmission(Transmission *t);
+
+    bool pushToPacketQueue(PacketVariant packet);
     bool pushToIncomingQueue(char *buffer, ssize_t len);
 
     void createSocketRecv(int *socket1);
@@ -43,22 +48,28 @@ private:
     void runMaster();
     void runSlave(const bool *run);
 
-    void processIncomingMsg();
+    void processIncomingMsg(Transmission *t);
+    void checkFinishedTransmission();
 
     static void sortPackets(Packet *packets, size_t n);
+    static void sortPackets(Transmission *t);
 
     bool savePacketsToFile(StartPacket *startPacket, Packet *packets);
+    bool saveTransmissionToFile(Transmission *t);
 
 public:
     void run(const bool *run, Config config);
 
     bool sendMsg(uint8_t *data, size_t dataLen, uint8_t *fileName, size_t fileNameLen);
 
-    bool msgOut() const;
+    [[nodiscard]] bool msgOut() const;
 
     void setIpSettings(uint8_t *dstIp, size_t port);
 
     void setOutputDirPath(std::string outDir);
+
+    void enableVerboseOutput() { verboseOutput = true; }
+    void disableVerboseOutput() { verboseOutput = false; }
 };
 
 
