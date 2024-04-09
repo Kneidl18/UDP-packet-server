@@ -37,7 +37,7 @@ public class Transmitter {
         int bytesRead = 0;
         long fileSize = new File(FILE_NAME).length();
         int sequenceNumber = rand.nextInt(Integer.MAX_VALUE - (int) (fileSize/MAX_PACKET_SIZE));
-        byte[] maxSeqNumber = intToBytes(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE));
+        byte[] maxSeqNumber = intToBytes(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE) + 1);
         int transmissionID = rand.nextInt(Integer.MAX_VALUE);
 
         MessageDigest md = MessageDigest.getInstance("MD5");
@@ -59,6 +59,7 @@ public class Transmitter {
         System.arraycopy(seqNumberBytes, 0, firstPaket, 2, 4); // kopiere sequence number in data[]
         System.arraycopy(maxSeqNumber, 0, firstPaket, 6, 4); // kopiere max sequence number in data[]
         System.arraycopy(fileNameBytes, 0, firstPaket, 10, fileNameBytes.length); // kopiere file name in data[]
+        System.out.println("maximale Sequenznummer: " + byteArrayToInt(maxSeqNumber));
 
         DatagramPacket packet = new DatagramPacket(firstPaket, firstPaket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(packet);  // sende paket
@@ -98,7 +99,7 @@ public class Transmitter {
 
         DatagramPacket eofPacket = new DatagramPacket(lastPacket, lastPacket.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
         socket.send(eofPacket);
-        System.out.println(Integer.MAX_VALUE);
+        System.out.println("max Seq. Number sent: " + byteArrayToInt(maxSeqNumber));
 
         fileInputStream.close();
 
@@ -127,6 +128,18 @@ public class Transmitter {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    public static int byteArrayToInt(byte[] bytes) {
+        if (bytes.length != 4) {
+            throw new IllegalArgumentException("Byte array length must be 4 to convert to int");
+        }
+
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            value = (value << 8) | (bytes[i] & 0xFF);
+        }
+        return value;
     }
 
 
