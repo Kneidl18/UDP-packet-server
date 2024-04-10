@@ -13,9 +13,9 @@ import java.util.Random;
 public class Transmitter {
 
     private static final int MAX_PACKET_SIZE = 9 * 1024; // 9 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//nvs24.ps.blatt3-ab2-1.pdf/";
+    private static final String FILE_NAME = "../cpp/test.txt";
     private static final String DESTINATION_IP = "127.0.0.1";
-    private static final int DESTINATION_PORT = 3000;
+    private static final int DESTINATION_PORT = 3004;
     private static IOException IllegalArgumentException;
     private static Random rand = new Random();
 
@@ -37,7 +37,7 @@ public class Transmitter {
         int bytesRead = 0;
         long fileSize = new File(FILE_NAME).length();
         int sequenceNumber = rand.nextInt(Integer.MAX_VALUE - (int) (fileSize/MAX_PACKET_SIZE));
-        byte[] maxSeqNumber = intToBytes(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE) + 1);
+        byte[] maxSeqNumber = intToBytes(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE) + 2);
         int transmissionID = rand.nextInt(Integer.MAX_VALUE);
 
         MessageDigest md = MessageDigest.getInstance("MD5");
@@ -88,7 +88,6 @@ public class Transmitter {
 
             sequenceNumber++;
             transmissionID++;
-
         }
 
 
