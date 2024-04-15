@@ -73,13 +73,14 @@ void SocketHelper::fillPacket (Packet *packet, PacketHeader *packetHeader, uint8
  * fill the start packet with a packet-header and a filename
  * @param packet
  * @param packetHeader
- * @param n
+ * @param n amount of packets
  * @param fileName
  * @param nameLen
  */
 void SocketHelper::fillStartPacket (StartPacket *packet, PacketHeader *packetHeader, size_t n, uint8_t *fileName,
                                     size_t nameLen){
     memcpy(&packet->packetHeader, packetHeader, sizeof(PacketHeader));
+
     // sequenceNumberMax = start + numberPackets + endPacket(1)
     packet->sequenceNumberMax = packetHeader->sequenceNumber + n + 1;
     packet->fileName = fileName;
@@ -453,8 +454,12 @@ void SocketHelper::checkFinishedTransmission(){
             if (verboseOutput)
                 std::cout << "received and processed a complete transmission" << std::endl;
         }
-        else if ((double) (std::chrono::system_clock::now() - i->openTime).count() * 1000 > PACKET_TIMEOUT) {
+        else if ((double) (std::chrono::system_clock::now() - i->openTime).count() / 1000.0 > PACKET_TIMEOUT) {
             // the packet timed out, remove it
+            std::cout << "time diff: " << (std::chrono::system_clock::now() - i->openTime).count() / 1000.0 << std::endl;
+            sleep(1);
+            std::cout << "time diff after 1 sec: " << (std::chrono::system_clock::now() - i->openTime).count() / 1000.0 << std::endl;
+
 
             // erase the packets in the transmission vector
             i->transmission.erase(i->transmission.begin(), i->transmission.end());
@@ -728,6 +733,8 @@ void SocketHelper::runSlave(const bool *run){
     int socket1;
     createSocketRecv(&socket1);
     sockaddr_in lastCon{};
+
+    // std::thread socketThreadListen(&SocketHelper::run, sh, &run, SLAVE);
 
     while (*run) {
         char buffer[BUFFER_LEN + sizeof(Packet)];
