@@ -119,7 +119,6 @@ void SocketHelper::increaseSequenceNumber (PacketHeader *header) {
 void SocketHelper::calcChecksum (EndPacket *endPacket, uint8_t *data, size_t dataLen, uint8_t *fileName,
                                  size_t fileNameLen) {
 
-    // std::string tmp = std::string(data, dataLen);
     md5::md5_t md5_o;
 
     md5_o.process(fileName, fileNameLen);
@@ -134,7 +133,6 @@ void SocketHelper::calcChecksum (EndPacket *endPacket, uint8_t *data, size_t dat
  */
 void SocketHelper::calcChecksumFromTransmission (Transmission *transmission, EndPacket *endPacket) {
 
-    // std::string tmp = std::string(data, dataLen);
     md5::md5_t md5_o;
     auto *startPacket = std::get<StartPacket *> (transmission->transmission.front());
 
