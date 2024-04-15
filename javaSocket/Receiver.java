@@ -33,6 +33,7 @@ public class Receiver{
         int sequenceNumber = 0;
         int maxSeqNumber = Integer.MAX_VALUE;
 
+        long startTime = 0;
         while (sequenceNumber < maxSeqNumber) {
             packet = new DatagramPacket(buffer, buffer.length);
             socket.receive(packet);
@@ -40,7 +41,8 @@ public class Receiver{
             byte[] receivedData = packet.getData();
             int length = packet.getLength();
             sequenceNumber = bytesToInt(receivedData, 2);
-            //System.out.println(sequenceNumber);
+            int totalReceivedBytes = 0;
+
 
             firstPacketCount++;
             if (length <= 266 && firstPacketCount < 2) {
@@ -50,6 +52,7 @@ public class Receiver{
                 fileName = new File(fileName).getName(); // dateiname aus pfad extrahieren
                 fileOutputStream = new FileOutputStream(fileName);
                 maxSeqNumber = bytesToInt(receivedData, 6);
+                startTime = System.currentTimeMillis();
             }
 
             System.out.println("Seq. Number: " + sequenceNumber);
@@ -65,9 +68,19 @@ public class Receiver{
         }
 
         fileOutputStream.close();
+        long endTime = System.currentTimeMillis();
+        String filePath = fileName;
+        File file = new File(filePath);
+        long fileSize = file.length();
 
         byte[] mdBytes = md.digest();
         System.out.println("Received MD5 checksum: " + bytesToHex(mdBytes));
+        System.out.println("Dateigröße: " + fileSize / 1000 + " Kb"); //Byte
+        System.out.println("Gesamte Übertragungszeit: " + (double) (endTime - startTime)/1000.0 + " sek.");
+
+        double dataRateMBps = (((double) fileSize / 1000000.0) / (double) (endTime - startTime)) * 1000.0;
+        System.out.println("Datenrate: " + dataRateMBps + " MB/s");
+
     }
 
     private static String bytesToHex(byte[] bytes) {
