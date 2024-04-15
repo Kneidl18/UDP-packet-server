@@ -33,8 +33,13 @@ public class Receiver{
         int sequenceNumber = 0;
         int maxSeqNumber = Integer.MAX_VALUE;
 
+        long startTime = 0;
         while (sequenceNumber < maxSeqNumber) {
             packet = new DatagramPacket(buffer, buffer.length);
+            firstPacketCount++;
+            if(firstPacketCount < 2) {
+                startTime = System.currentTimeMillis();
+            }
             socket.receive(packet);
 
             byte[] receivedData = packet.getData();
@@ -42,7 +47,7 @@ public class Receiver{
             sequenceNumber = bytesToInt(receivedData, 2);
             //System.out.println(sequenceNumber);
 
-            firstPacketCount++;
+
             if (length <= 266 && firstPacketCount < 2) {
                 byte[] fileNameBytes = new byte[length - 10];
                 System.arraycopy(receivedData, 10, fileNameBytes, 0, length - 10);
@@ -65,9 +70,11 @@ public class Receiver{
         }
 
         fileOutputStream.close();
+        long endTime = System.currentTimeMillis();
 
         byte[] mdBytes = md.digest();
         System.out.println("Received MD5 checksum: " + bytesToHex(mdBytes));
+        System.out.println("Gesamte Übertragungszeit: " + (double) (endTime - startTime)/1000.0 + " sek.");
     }
 
     private static String bytesToHex(byte[] bytes) {
