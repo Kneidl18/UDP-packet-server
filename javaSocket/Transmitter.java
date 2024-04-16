@@ -15,7 +15,7 @@ import java.util.Random;
 
 public class Transmitter {
 
-    private static final int MAX_PACKET_SIZE = 9 * 1024; // 9 KB max. Übertragungsgröße pro paket
+    private static final int MAX_PACKET_SIZE = 9000; // 9 KB max. Übertragungsgröße pro paket
     private static final String FILE_NAME = "../cpp/test.txt";
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3004;
