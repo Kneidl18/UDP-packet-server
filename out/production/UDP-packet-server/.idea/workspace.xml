@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="6b1c9cfc-8820-40dc-a733-7bcb18b36d42" name="Changes" comment="data rate added">
+      <change beforePath="$PROJECT_DIR$/javaSocket/Transmitter.java" beforeDir="false" afterPath="$PROJECT_DIR$/javaSocket/Transmitter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nvs24.ps.blatt3-ab2-1.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/nvs24.ps.blatt3-ab2-1.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/cpp/PacketStructure.h" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/cpp/PacketStructure.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/cpp/SocketHelper.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/cpp/SocketHelper.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/javaSocket/Receiver.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/javaSocket/Receiver.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/javaSocket/Transmitter.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/javaSocket/Transmitter.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/nvs24.ps.blatt3-ab2-1.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/nvs24.ps.blatt3-ab2-1.pdf" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="2e0oCmV1jL2ugetHcQHKkXaiIbp" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Application.Receiver.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestExecutor.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Transmitter.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Public/Documents/UDP-packet-server&quot;
+  }
+}</component>
+  <component name="RunManager" selected="Application.Receiver">
+    <configuration name="Receiver" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="javaSocket.Receiver" />
+      <module name="UDP-packet-server" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="javaSocket.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestExecutor" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="javaSocket.TestExecutor" />
+      <module name="UDP-packet-server" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="javaSocket.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Transmitter" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="javaSocket.Transmitter" />
+      <module name="UDP-packet-server" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="javaSocket.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.Receiver" />
+        <item itemvalue="Application.TestExecutor" />
+        <item itemvalue="Application.Transmitter" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="jdk-20.0.2-corretto-20.0.2.1-4caba194b151-5bc9ecd2" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="6b1c9cfc-8820-40dc-a733-7bcb18b36d42" name="Changes" comment="" />
+      <created>1711050731170</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1711050731170</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Transmitter &amp; Receiver added">
+      <created>1711093536963</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1711093536963</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Grundstruktur hergestellt">
+      <created>1711096000571</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1711096000571</updated>
+    </task>
+    <task id="LOCAL-00003" summary="annäherung an vorgaben">
+      <created>1711375653497</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1711375653497</updated>
+    </task>
+    <task id="LOCAL-00004" summary="first packet structure added">
+      <created>1711377161624</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1711377161624</updated>
+    </task>
+    <task id="LOCAL-00005" summary="last packet structure added">
+      <created>1711377694122</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1711377694122</updated>
+    </task>
+    <task id="LOCAL-00006" summary="works without MD5">
+      <created>1711444071340</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1711444071340</updated>
+    </task>
+    <task id="LOCAL-00007" summary="MD5, seq Nr. &amp; trans ID length">
+      <created>1711444879979</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1711444879979</updated>
+    </task>
+    <task id="LOCAL-00008" summary="übertragungsfehler">
+      <created>1711449016941</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1711449016941</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Java debugging">
+      <created>1711530246186</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1711530246188</updated>
+    </task>
+    <task id="LOCAL-00010" summary="dateiname updated">
+      <created>1711534475938</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1711534475938</updated>
+    </task>
+    <task id="LOCAL-00011" summary="fOutputStream updated">
+      <created>1711539997390</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1711539997390</updated>
+    </task>
+    <task id="LOCAL-00012" summary="filename error">
+      <created>1711547228318</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1711547228318</updated>
+    </task>
+    <task id="LOCAL-00013" summary="filename works">
+      <created>1711547483776</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1711547483776</updated>
+    </task>
+    <task id="LOCAL-00014" summary="final changes">
+      <created>1711547683623</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1711547683623</updated>
+    </task>
+    <task id="LOCAL-00015" summary="maxSeqNumber Receiver does not terminate">
+      <created>1711549211625</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1711549211625</updated>
+    </task>
+    <task id="LOCAL-00016" summary="maxSeqNumber fix">
+      <created>1711569230532</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1711569230532</updated>
+    </task>
+    <task id="LOCAL-00017" summary="maxSeqNumber fix">
+      <created>1711569381486</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1711569381486</updated>
+    </task>
+    <task id="LOCAL-00018" summary="some changes">
+      <option name="closed" value="true" />
+      <created>1712659306382</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1712659306384</updated>
+    </task>
+    <task id="LOCAL-00019" summary="9 kb max packet size">
+      <option name="closed" value="true" />
+      <created>1712660070138</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1712660070138</updated>
+    </task>
+    <task id="LOCAL-00020" summary="last sequence number">
+      <option name="closed" value="true" />
+      <created>1712660230249</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1712660230249</updated>
+    </task>
+    <task id="LOCAL-00021" summary="last sequence number fix">
+      <option name="closed" value="true" />
+      <created>1712666741812</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1712666741812</updated>
+    </task>
+    <task id="LOCAL-00022" summary="last sequence number fix #2">
+      <option name="closed" value="true" />
+      <created>1712667693829</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1712667693829</updated>
+    </task>
+    <task id="LOCAL-00023" summary="last sequence number fix #3">
+      <option name="closed" value="true" />
+      <created>1712668971097</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1712668971097</updated>
+    </task>
+    <task id="LOCAL-00024" summary="seems to work">
+      <option name="closed" value="true" />
+      <created>1712670282205</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1712670282205</updated>
+    </task>
+    <task id="LOCAL-00025" summary="time added">
+      <option name="closed" value="true" />
+      <created>1713177070738</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1713177070739</updated>
+    </task>
+    <task id="LOCAL-00026" summary="data rate added">
+      <option name="closed" value="true" />
+      <created>1713178892708</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1713178892708</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Transmitter &amp; Receiver added" />
+    <MESSAGE value="Grundstruktur hergestellt" />
+    <MESSAGE value="annäherung an vorgaben" />
+    <MESSAGE value="first packet structure added" />
+    <MESSAGE value="last packet structure added" />
+    <MESSAGE value="works without MD5" />
+    <MESSAGE value="MD5, seq Nr. &amp; trans ID length" />
+    <MESSAGE value="übertragungsfehler" />
+    <MESSAGE value="Java debugging" />
+    <MESSAGE value="dateiname updated" />
+    <MESSAGE value="fOutputStream updated" />
+    <MESSAGE value="filename error" />
+    <MESSAGE value="filename works" />
+    <MESSAGE value="final changes" />
+    <MESSAGE value="maxSeqNumber Receiver does not terminate" />
+    <MESSAGE value="maxSeqNumber fix" />
+    <MESSAGE value="some changes" />
+    <MESSAGE value="9 kb max packet size" />
+    <MESSAGE value="last sequence number" />
+    <MESSAGE value="last sequence number fix" />
+    <MESSAGE value="last sequence number fix #2" />
+    <MESSAGE value="last sequence number fix #3" />
+    <MESSAGE value="seems to work" />
+    <MESSAGE value="time added" />
+    <MESSAGE value="data rate added" />
+    <option name="LAST_COMMIT_MESSAGE" value="data rate added" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.io.FileNotFoundException" package="java.io" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

@@ -46,6 +46,7 @@ public class Receiver{
             sequenceNumber = reverseBytes(sequenceNumber); // revert because c++ code sends it reversed
             int totalReceivedBytes = 0;
 
+            System.out.println("Seq. Number: " + sequenceNumber);
 
             firstPacketCount++;
             if (length <= 266 && firstPacketCount < 2) {
@@ -57,18 +58,17 @@ public class Receiver{
                 maxSeqNumber = bytesToInt(receivedData, 6);
                 maxSeqNumber = reverseBytes(maxSeqNumber);
                 startTime = System.currentTimeMillis();
+                
+                // add filename to md5 checksum
+                md.update(fileName.getBytes());
+                continue;
             }
 
-            System.out.println("Seq. Number: " + sequenceNumber);
-            /*
-            if (length == 22) {  //letztes Paket übertragen = springe aus der schleife
-                System.out.println("maxSeqNumber received: " + maxSeqNumber);
-                break;
-            }
-            */
-            fileOutputStream.write(receivedData, 6, length - 6);
-            md.update(receivedData, 6, length - 6);
 
+            if (sequenceNumber != maxSeqNumber) {
+                fileOutputStream.write(receivedData, 6, length - 6);
+                md.update(receivedData, 6, length - 6);
+            }
         }
 
         fileOutputStream.close();
