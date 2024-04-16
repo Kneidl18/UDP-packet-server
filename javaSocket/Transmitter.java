@@ -68,7 +68,7 @@ public class Transmitter {
         revertArray(transIDBytes);
         revertArray(seqNumberBytes);
 
-        byte[] fileNameBytes = FILE_NAME.getBytes(StandardCharsets.UTF_8);
+        byte[] fileNameBytes = splitFileName[splitFileName.length-1].getBytes(StandardCharsets.UTF_8);
         byte[] firstPaket = null;
         if (fileNameBytes.length < 256) {
             firstPaket = new byte[fileNameBytes.length + 10];  // größe zum übertragen des ersten pakets ist variabelSystem.arraycopy(transIDBytes, 0, firstPaket, 0, 2); // kopiere transmission id in data[]
