@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.lang.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 public class Transmitter {
@@ -17,7 +20,7 @@ public class Transmitter {
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3004;
     private static IOException IllegalArgumentException;
-    private static Random rand = new Random();
+    private static final Random rand = new Random();
 
     public static void main(String[] args) {
         try {
@@ -31,24 +34,40 @@ public class Transmitter {
         }
     }
 
+    private static void revertArray(byte[] a){
+        for (int i = 0; i < a.length / 2; i++){
+            byte tmp = a[i];
+            a[i] = a[a.length - i - 1];
+            a[a.length - i - 1] = tmp;
+        }
+    }
+
+
     private static void sendFile(DatagramSocket socket) throws IOException, NoSuchAlgorithmException {
         FileInputStream fileInputStream = new FileInputStream(new File(FILE_NAME));
         byte[] buffer = new byte[MAX_PACKET_SIZE];
         int bytesRead = 0;
         long fileSize = new File(FILE_NAME).length();
-        int sequenceNumber = rand.nextInt(Integer.MAX_VALUE - (int) (fileSize/MAX_PACKET_SIZE));
+        int sequenceNumber = 0; //rand.nextInt(Integer.MAX_VALUE - (int) (fileSize/MAX_PACKET_SIZE));
         byte[] maxSeqNumber = intToBytes(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE) + 2);
+        revertArray(maxSeqNumber);
         int transmissionID = rand.nextInt(Integer.MAX_VALUE);
 
         MessageDigest md = MessageDigest.getInstance("MD5");
+        String splitFileName[] = FILE_NAME.split("/");
+        md.update(splitFileName[splitFileName.length-1].getBytes());
 
         int totalBytesRead = 0;
-
 
 
         //erstes Paket
         byte[] transIDBytes = shortToBytes(transmissionID); // wandle transmission id in byte-array
         byte[] seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
+        // because of little-endian/big-endian difference in c++ and java:
+        // revert the numbers
+        revertArray(transIDBytes);
+        revertArray(seqNumberBytes);
+
         byte[] fileNameBytes = FILE_NAME.getBytes(StandardCharsets.UTF_8);
         byte[] firstPaket = null;
         if (fileNameBytes.length < 256) {
@@ -74,6 +93,9 @@ public class Transmitter {
             totalBytesRead += bytesRead;
             transIDBytes = shortToBytes(transmissionID); // wandle transmission id in byte-array
             seqNumberBytes = intToBytes(sequenceNumber); // wandle sequence number in byte-array
+            revertArray(transIDBytes);
+            revertArray(seqNumberBytes);
+
             byte[] data = new byte[bytesRead + 6];  // 60 kb + 6 b
             System.arraycopy(transIDBytes, 0, data, 0, 2); // kopiere transmission id in data[]
             System.arraycopy(seqNumberBytes, 0, data, 2, 4); // kopiere sequence number in data[]
