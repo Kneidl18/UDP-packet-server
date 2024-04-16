@@ -19,8 +19,8 @@
  */
 #pragma pack(1)
 typedef struct{
-    uint32_t sequenceNumber;
     uint16_t transmissionId;
+    uint32_t sequenceNumber;
 } PacketHeader;
 
 typedef struct{
@@ -48,7 +48,9 @@ typedef struct{
     uint32_t sequenceNumMax;
     std::vector<PacketVariant> transmission;
     bool transmissionComplete;
+    std::chrono::system_clock::time_point lastPacketRecvTime;
     std::chrono::system_clock::time_point openTime;
+    uint64_t transmissionSize;
 } Transmission;
 
 /**

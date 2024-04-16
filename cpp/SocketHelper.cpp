@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <filesystem>
+#include <bitset>
 
 #define PORT_NUMBER 8080
 
@@ -290,6 +291,15 @@ bool SocketHelper::checkCorrectnessOfTransmission (Transmission *t){
     for (int i = 0; i < 16; i++){
         if (dummy.checksum[i] != endPacket->checksum[i]){
             std::cerr << "error in checksum" << std::endl;
+            std::cout << "received: ";
+            for (int j = 0; j < 16; j++){
+                std::cout << std::hex << (int) endPacket->checksum[j];
+            }
+            std::cout << std::endl << "calced:   ";
+            for (int j = 0; j < 16; j++){
+                std::cout << std::hex << (int) dummy.checksum[j];
+            }
+            std::cout << std::endl;
             return false;
         }
     }
@@ -379,6 +389,7 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len){
 
         // packet is of this transmission, adding it
         // separating last packet from normal packet
+        auto incoming = reinterpret_cast<PacketHeader *> (buffer)->sequenceNumber;
         if (packet->sequenceNumberMax == reinterpret_cast<PacketHeader *> (buffer)->sequenceNumber) {
             auto *ep = new EndPacket {};
             memcpy(ep, buffer, sizeof(EndPacket));
@@ -400,7 +411,8 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len){
         }
 
         // reset time to keep the transmission open, as a new packet arrived
-        i->openTime = std::chrono::system_clock::now();
+        i->lastPacketRecvTime = std::chrono::system_clock::now();
+        i->transmissionSize += len;
         return true;
     }
 
@@ -424,11 +436,34 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len){
     memcpy(&t->header, buffer, sizeof(PacketHeader));
     t->sequenceNumMax = reinterpret_cast<StartPacket *> (buffer)->sequenceNumberMax;
     t->transmission.emplace_back(sp);
-    t->openTime = std::chrono::system_clock::now(); // add the time when the transmission first appears
+    t->lastPacketRecvTime = std::chrono::system_clock::now(); // add the time when the transmission first appears
+    t->openTime = t->lastPacketRecvTime;
+    t->transmissionSize = len;
 
     // push the transmission to the transmission vector
     incomingTransmission.push_back(t);
     return true;
+}
+
+std::string convertNumberToPrettyPrintBytes(double a){
+    std::string res;
+    if (a > 1024 * 1024 * 1024){
+        res = std::to_string(a / (1024 * 1024 * 1024));
+        res += "GB";
+    }
+    else if (a > 1024 * 1024){
+        res = std::to_string(a / (1024 * 1024));
+        res += "MB";
+    }
+    else if (a > 1024){
+        res = std::to_string(a / 1024);
+        res += "kB";
+    }
+    else {
+        res = std::to_string(a);
+        res += "B";
+    }
+    return res;
 }
 
 /**
@@ -445,20 +480,30 @@ void SocketHelper::checkFinishedTransmission(){
             // this transmission is complete, process it
             processIncomingMsg(i);
 
+            if (verboseOutput) {
+                std::cout << std::dec;
+                std::cout << "received and processed a complete transmission" << std::endl;
+                std::cout << "stats: time->" << (i->lastPacketRecvTime - i->openTime).count() / 1000.0 << "s";
+                std::cout << " size of data in bytes->" << convertNumberToPrettyPrintBytes(
+                        (double)i->transmissionSize);
+                std::cout << " data-rate->";
+                std::cout << convertNumberToPrettyPrintBytes(
+                        (double)i->transmissionSize / (i->lastPacketRecvTime - i->openTime).count() * 1000);
+                std::cout << "/s" << std::endl << std::flush;
+            }
+
             // make sure all packets and the vector element itself are deleted
             // erase the packets in the transmission vector
             i->transmission.erase(i->transmission.begin(), i->transmission.end());
             // erase the transmission from the incoming transmission vector
             incomingTransmission.erase(incomingTransmission.begin() + count);
             count--;
-            if (verboseOutput)
-                std::cout << "received and processed a complete transmission" << std::endl;
         }
-        else if ((double) (std::chrono::system_clock::now() - i->openTime).count() / 1000.0 > PACKET_TIMEOUT) {
+        else if ((double) (std::chrono::system_clock::now() - i->lastPacketRecvTime).count() / 1000.0 > PACKET_TIMEOUT) {
             // the packet timed out, remove it
-            std::cout << "time diff: " << (std::chrono::system_clock::now() - i->openTime).count() / 1000.0 << std::endl;
+            std::cout << "time diff: " << (std::chrono::system_clock::now() - i->lastPacketRecvTime).count() / 1000.0 << std::endl;
             sleep(1);
-            std::cout << "time diff after 1 sec: " << (std::chrono::system_clock::now() - i->openTime).count() / 1000.0 << std::endl;
+            std::cout << "time diff after 1 sec: " << (std::chrono::system_clock::now() - i->lastPacketRecvTime).count() / 1000.0 << std::endl;
 
 
             // erase the packets in the transmission vector
