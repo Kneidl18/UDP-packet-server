@@ -46,7 +46,7 @@ public class Receiver{
             sequenceNumber = reverseBytes(sequenceNumber); // revert because c++ code sends it reversed
             int totalReceivedBytes = 0;
 
-            System.out.println("Seq. Number: " + sequenceNumber);
+            // System.out.println("Seq. Number: " + sequenceNumber);
 
             firstPacketCount++;
             if (length <= 266 && firstPacketCount < 2) {
