@@ -8,8 +8,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import static java.lang.Integer.reverseBytes;
+
 public class Receiver{
-    private static final int MAX_PACKET_SIZE = 9 * 1024; // 60 KB max. Paketgröße
+    private static final int MAX_PACKET_SIZE = 9000; // 60 KB max. Paketgröße
     private static final int MAX_PACKET_HEADER_SIZE = 10;
     private static String fileName = null;
     private static final int DESTINATION_PORT = 3004;
@@ -41,6 +43,7 @@ public class Receiver{
             byte[] receivedData = packet.getData();
             int length = packet.getLength();
             sequenceNumber = bytesToInt(receivedData, 2);
+            sequenceNumber = reverseBytes(sequenceNumber); // revert because c++ code sends it reversed
             int totalReceivedBytes = 0;
 
 
@@ -52,6 +55,7 @@ public class Receiver{
                 fileName = new File(fileName).getName(); // dateiname aus pfad extrahieren
                 fileOutputStream = new FileOutputStream(fileName);
                 maxSeqNumber = bytesToInt(receivedData, 6);
+                maxSeqNumber = reverseBytes(maxSeqNumber);
                 startTime = System.currentTimeMillis();
             }
 
