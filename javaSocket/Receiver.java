@@ -79,11 +79,12 @@ public class Receiver{
 
         byte[] mdBytes = md.digest();
         System.out.println("Received MD5 checksum: " + bytesToHex(mdBytes));
-        System.out.println("Dateigröße: " + fileSize / 1000 + " Kb"); //Byte
+        System.out.println("Dateigröße: " + (double) fileSize / 1000.0 + " Kb"); //Byte
         System.out.println("Gesamte Übertragungszeit: " + (double) (endTime - startTime)/1000.0 + " sek.");
 
         double dataRateMBps = (((double) fileSize / 1000000.0) / (double) (endTime - startTime)) * 1000.0;
-        System.out.println("Datenrate: " + dataRateMBps + " MB/s");
+        double roundedDataRateMBps = Math.round(dataRateMBps * 1000.0) / 1000.0;
+        System.out.println("Datenrate: " + roundedDataRateMBps + " MB/s");
 
     }
 
