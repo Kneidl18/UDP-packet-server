@@ -53,6 +53,18 @@ typedef struct{
     uint64_t transmissionSize;
 } Transmission;
 
+
+typedef struct{
+  uint8_t version = 0;
+  uint32_t sequenceNumber;
+} ACK;
+
+typedef struct{
+  uint8_t version = 1;
+  uint32_t sequenceNumber;
+} NAK;
+
+
 /**
  * overwrite << to pretty-print a packet
  */
