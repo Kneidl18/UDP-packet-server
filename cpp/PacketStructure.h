@@ -5,135 +5,162 @@
 #ifndef PP_PACKETSTRUCTURE_H
 #define PP_PACKETSTRUCTURE_H
 
-#include <cstdint>
 #include <bitset>
-#include <variant>
 #include <chrono>
+#include <cstdint>
+#include <iostream>
+#include <variant>
+#include <vector>
 
 #define MAX_DATA_LEN 9000.0
 #define BUFFER_LEN (uint) MAX_DATA_LEN
-#define PACKET_TIMEOUT 1000 // millisecond a packet is kept before it's deleted from the vector
+
+// millisecond a packet is kept before it's deleted from the vector
+#define PACKET_TIMEOUT 1000
 
 /**
  * structs for the packets
  */
 #pragma pack(1)
-typedef struct{
-    uint16_t transmissionId;
-    uint32_t sequenceNumber;
+typedef struct {
+  uint16_t transmissionId;
+  uint32_t sequenceNumber;
 } PacketHeader;
 
-typedef struct{
-    PacketHeader packetHeader;
-    uint8_t *data;
-    size_t dataLen;
+typedef struct {
+  PacketHeader packetHeader;
+  uint8_t *data;
+  size_t dataLen;
 } Packet;
 
-typedef struct{
-    PacketHeader packetHeader;
-    uint32_t sequenceNumberMax;
-    uint8_t *fileName;
-    size_t nameLen;
+typedef struct {
+  PacketHeader packetHeader;
+  uint32_t sequenceNumberMax;
+  uint8_t *fileName;
+  size_t nameLen;
 } StartPacket;
 
-typedef struct{
-    PacketHeader packetHeader;
-    uint8_t checksum[16];
+typedef struct {
+  PacketHeader packetHeader;
+  uint8_t checksum[16];
 } EndPacket;
 
 using PacketVariant = std::variant<Packet *, StartPacket *, EndPacket *>;
 
-typedef struct{
-    PacketHeader header;
-    uint32_t sequenceNumMax;
-    std::vector<PacketVariant> transmission;
-    bool transmissionComplete;
-    std::chrono::system_clock::time_point lastPacketRecvTime;
-    std::chrono::system_clock::time_point openTime;
-    uint64_t transmissionSize;
+typedef struct {
+  PacketHeader header;
+  uint32_t sequenceNumMax;
+  std::vector<PacketVariant> transmission;
+  bool transmissionComplete;
+  std::chrono::system_clock::time_point lastPacketRecvTime;
+  std::chrono::system_clock::time_point openTime;
+  uint64_t transmissionSize;
 } Transmission;
 
+enum ACK_NAK_VERSION { ACK_VERSION, NAK_VERSION };
 
-typedef struct{
-  uint8_t version = 0;
+// ACK message; answer when packet did arrive
+typedef struct ACK {
+  uint8_t version = ACK_VERSION;
   uint32_t sequenceNumber;
-} ACK;
+};
 
-typedef struct{
-  uint8_t version = 1;
+// NAK message; answer when paket didn't arrive
+typedef struct NAK {
+  uint8_t version = NAK_VERSION;
   uint32_t sequenceNumber;
-} NAK;
+};
 
+inline bool operator<(Packet &a, Packet &b) {
+  return a.packetHeader.sequenceNumber < b.packetHeader.sequenceNumber;
+}
 
-/**
- * overwrite << to pretty-print a packet
- */
-inline std::ostream& operator << (std::ostream& o, Packet& p) {
-    std::bitset<16> trans(p.packetHeader.transmissionId);
-    std::bitset<32> sequence(p.packetHeader.sequenceNumber);
-
-
-    o << "packet: tId->" << p.packetHeader.transmissionId << "\tsNr->" << p.packetHeader.sequenceNumber << "\tdata->";
-    for (auto i = 0; i < p.dataLen && i < 100; i++){
-        o << p.data[i];
-    }
-    o << std::endl;
-
-    /*
-    o << "packet: tId->" << trans << "\tsNr->" << sequence << "\tdata->";
-    for (auto i = 0; i < p.dataLen; i++){
-        std::bitset<8> x(p.data[i]);
-        o << x << " ";
-    }
-    o << std::endl;
-     */
-
-    return o;
+inline bool operator==(Packet &a, Packet &b) {
+  return a.packetHeader.sequenceNumber == b.packetHeader.sequenceNumber;
 }
 
 /**
  * overwrite << to pretty-print a packet
  */
-inline std::ostream& operator << (std::ostream& o, StartPacket & p) {
-    std::bitset<16> trans(p.packetHeader.transmissionId);
-    std::bitset<32> sequence(p.packetHeader.sequenceNumber);
-    std::bitset<32> maxSequence(p.sequenceNumberMax);
+inline std::ostream &operator<<(std::ostream &o, Packet &p) {
+  std::bitset<16> trans(p.packetHeader.transmissionId);
+  std::bitset<32> sequence(p.packetHeader.sequenceNumber);
 
-    o << std::endl;
-    o << "start packet: tId->" << p.packetHeader.transmissionId << "\tsNr->" << p.packetHeader.sequenceNumber;
-    o << "\tmaxSNr->" << p.sequenceNumberMax << "\tfileName->" << p.fileName << std::endl;
+  o << "packet: tId->" << p.packetHeader.transmissionId << "\tsNr->"
+    << p.packetHeader.sequenceNumber << "\tdata->";
+  for (auto i = 0; i < p.dataLen && i < 100; i++) {
+    o << p.data[i];
+  }
+  o << std::endl;
 
-    /*
-    o << "packet: tId->" << trans << "\tsNr->" << sequence << "\tmaxSNr->" << maxSequence;
-    o << std::endl;
-    */
-    return o;
+  /*
+  o << "packet: tId->" << trans << "\tsNr->" << sequence << "\tdata->";
+  for (auto i = 0; i < p.dataLen; i++){
+      std::bitset<8> x(p.data[i]);
+      o << x << " ";
+  }
+  o << std::endl;
+   */
+
+  return o;
 }
 
 /**
  * overwrite << to pretty-print a packet
  */
-inline std::ostream& operator << (std::ostream& o, EndPacket & p) {
-    std::bitset<16> trans(p.packetHeader.transmissionId);
-    std::bitset<32> sequence(p.packetHeader.sequenceNumber);
+inline std::ostream &operator<<(std::ostream &o, StartPacket &p) {
+  std::bitset<16> trans(p.packetHeader.transmissionId);
+  std::bitset<32> sequence(p.packetHeader.sequenceNumber);
+  std::bitset<32> maxSequence(p.sequenceNumberMax);
 
-    o << "end packet:   tId->" << p.packetHeader.transmissionId << "\tsNr->" << p.packetHeader.sequenceNumber;
-    o << "\tchecksum->";
-    for (auto i : p.checksum)
-        o << std::hex << (int) i;
+  o << std::endl;
+  o << "start packet: tId->" << p.packetHeader.transmissionId << "\tsNr->"
+    << p.packetHeader.sequenceNumber;
+  o << "\tmaxSNr->" << p.sequenceNumberMax << "\tfileName->" << p.fileName
+    << std::endl;
 
-    std::cout << std::endl << std::endl;
-
-    /*
-    o << "packet: tId->" << trans << "\tsNr->" << sequence << "\tchecksum->";
-    for (unsigned char i : p.checksum){
-        std::bitset<8> x(i);
-        o << x << " ";
-    }
-    o << std::endl;
-     */
-
-    return o;
+  /*
+  o << "packet: tId->" << trans << "\tsNr->" << sequence << "\tmaxSNr->" <<
+  maxSequence; o << std::endl;
+  */
+  return o;
 }
 
-#endif //PP_PACKETSTRUCTURE_H
+/**
+ * overwrite << to pretty-print a packet
+ */
+inline std::ostream &operator<<(std::ostream &o, EndPacket &p) {
+  std::bitset<16> trans(p.packetHeader.transmissionId);
+  std::bitset<32> sequence(p.packetHeader.sequenceNumber);
+
+  o << "end packet:   tId->" << p.packetHeader.transmissionId << "\tsNr->"
+    << p.packetHeader.sequenceNumber;
+  o << "\tchecksum->";
+  for (auto i : p.checksum)
+    o << std::hex << (int)i;
+
+  std::cout << std::endl << std::endl;
+
+  /*
+  o << "packet: tId->" << trans << "\tsNr->" << sequence << "\tchecksum->";
+  for (unsigned char i : p.checksum){
+      std::bitset<8> x(i);
+      o << x << " ";
+  }
+  o << std::endl;
+   */
+
+  return o;
+}
+
+inline std::ostream &operator<<(std::ostream &o, ACK &a) {
+  o << "sNum->" << a.sequenceNumber;
+  return o;
+}
+
+inline std::ostream &operator<<(std::ostream &o, NAK &a) {
+  o << "sNum->" << a.sequenceNumber;
+  return o;
+}
+
+#endif // PP_PACKETSTRUCTURE_H
