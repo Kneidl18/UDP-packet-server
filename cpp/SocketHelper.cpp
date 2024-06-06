@@ -654,84 +654,35 @@ bool SocketHelper::sendMsg(uint8_t *data, size_t dataLen, uint8_t *fileName,
 bool SocketHelper::msgOut() const { return msgSend; }
 
 /**
- * create a socket for sending
- * @param socket1 pointer to socket number
+ * create a socket
+ * @param socket pointer to socket number
  */
-void SocketHelper::createSocketSend(int *socket1) {
+void SocketHelper::createSocket(int *socket_fd) {
   // creating socket
-  *socket1 = socket(AF_INET, SOCK_DGRAM, 0);
-  int con;
-
   // specifying address
   sockaddr_in serverAddress{};
   serverAddress.sin_family = AF_INET;
   serverAddress.sin_port = htons(PORT_NUMBER);
   serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-  // sending connection request
-  if (dstIpAddr == nullptr)
-    con = connect(*socket1, (struct sockaddr *)&serverAddress,
-                  sizeof(serverAddress));
-  else {
-    con = connect(*socket1, (struct sockaddr *)dstIpAddr, sizeof(sockaddr_in));
-  }
+  // getaddrinfo(NULL, PORT, &hints, &p);
 
-  if(bind(*socket1, (struct sockaddr *)&dstIpAddr, sizeof(sockaddr_in)) < 0){
-      std::cerr << "ERROR on binding" << std::endl;
-      exit(1);
-  }
-
-  if (con < 0) {
-    std::cerr << "error connecting to socket" << std::endl;
-    exit(1);
-  }
-}
-
-/**
- * create a socket for receiving
- * @param socket1 pointer to socker number (being replaced)
- */
-void SocketHelper::createSocketRecv(int *socket1, sockaddr_in *sockInfo) {
-  // create a socket:
-  // socket(int domain, int type, int protocol)
-  *socket1 = socket(AF_INET, SOCK_DGRAM, 0);
-  if (*socket1 < 0) {
-    std::cerr << "error opening socket" << std::endl;
+  int tmp_sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (bind(tmp_sock_fd, (struct sockaddr *)&serverAddress,
+           sizeof(sockaddr_in)) < 0) {
+    std::cerr << "ERROR on binding" << std::endl;
     exit(1);
   }
 
-  // clear address structure
-  bzero((char *)&serv_addr, sizeof(serv_addr));
+  listen(tmp_sock_fd, 5);
+  fcntl(*socket_fd, F_SETFL, O_NONBLOCK);
 
-  if (sockInfo == nullptr) {
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(PORT_NUMBER);
-  } else {
-    memcpy(&serv_addr, sockInfo, sizeof(sockaddr_in));
+  socklen_t sin_size = sizeof(sockaddr_in);
+  *socket_fd = accept(tmp_sock_fd, (struct sockaddr *)&dstIpAddr, &sin_size);
+  if (*socket_fd < 0) {
+    std::cout << "error on accept" << std::endl;
+    exit(1);
   }
-
-  if (dstIpAddr == nullptr || sockInfo != nullptr) {
-    if (bind(*socket1, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-      std::cerr << "ERROR on binding" << std::endl;
-      exit(1);
-    }
-    if (verboseOutput)
-      std::cout << "listening on: " << inet_ntoa(serv_addr.sin_addr) << " port "
-                << ntohs(serv_addr.sin_port) << std::endl;
-  } else {
-    if (bind(*socket1, (struct sockaddr *)dstIpAddr, sizeof(serv_addr)) < 0) {
-      std::cerr << "ERROR on binding" << std::endl;
-      exit(1);
-    }
-    if (verboseOutput)
-      std::cout << "listening on: " << inet_ntoa(dstIpAddr->sin_addr)
-                << " port " << ntohs(dstIpAddr->sin_port) << std::endl;
-  }
-
-  listen(*socket1, 5);
-
-  fcntl(*socket1, F_SETFL, O_NONBLOCK);
 }
 
 // helper function to delete all packets
@@ -864,14 +815,14 @@ void SocketHelper::readAckNak(int socket, SlidingWindow *slidingWindow) {
  * run the sending loop
  */
 void SocketHelper::runMaster() {
-  int socketSend, socketRecv;
-  createSocketSend(&socketSend);
+  int sock_fd;
+  createSocket(&sock_fd);
 
   struct sockaddr_in myAddr {};
   socklen_t len = sizeof(sockaddr_in);
   bzero(&myAddr, sizeof(sockaddr_in));
-  send(socketSend, "", 0, 0);
-  int test = getsockname(socketSend, (struct sockaddr *)&myAddr, &len);
+  send(sock_fd, "", 0, 0);
+  int test = getsockname(sock_fd, (struct sockaddr *)&myAddr, &len);
   // std::cout << ntohs(myAddr.sin_port) << std::endl;
   // createSocketRecv(&socketRecv, &myAddr);
 
@@ -893,7 +844,7 @@ void SocketHelper::runMaster() {
       continue;
     }
 
-    readAckNak(socketRecv, slidingWindow);
+    readAckNak(sock_fd, slidingWindow);
 
     if (slidingWindow->latestAcknoledgedPacket == (uint32_t)-1) {
       if (verboseOutput)
@@ -911,7 +862,7 @@ void SocketHelper::runMaster() {
             outgoingPackets->startPacket->fileName[i];
       }
 
-      ssize_t n = send(socketSend, packetAsArray,
+      ssize_t n = send(sock_fd, packetAsArray,
                        sizeof(uint32_t) + sizeof(PacketHeader) +
                            outgoingPackets->startPacket->nameLen,
                        0);
@@ -928,7 +879,7 @@ void SocketHelper::runMaster() {
       char packetAsArray[sizeof(EndPacket)];
       memcpy(packetAsArray, outgoingPackets->endPacket, sizeof(EndPacket));
 
-      ssize_t n = send(socketSend, packetAsArray, sizeof(EndPacket), 0);
+      ssize_t n = send(sock_fd, packetAsArray, sizeof(EndPacket), 0);
 
       if (verboseOutput)
         std::cout << "end packet sent " << n << " bytes" << std::endl;
@@ -956,7 +907,7 @@ void SocketHelper::runMaster() {
 
       // send it
       ssize_t n =
-          send(socketSend, packetAsArray, sizeof(PacketHeader) + p->dataLen, 0);
+          send(sock_fd, packetAsArray, sizeof(PacketHeader) + p->dataLen, 0);
 
       if (verboseOutput)
         std::cout << "packet sent " << n << " bytes" << std::endl;
@@ -975,11 +926,8 @@ void SocketHelper::runMaster() {
  * @param run receive as long as true
  */
 void SocketHelper::runSlave(const bool *run) {
-  int socketRecv, socketSend;
-  createSocketRecv(&socketRecv, nullptr);
-  socklen_t len = sizeof(sockaddr_in);
-  getsockname(socketRecv, (sockaddr *)dstIpAddr, &len);
-  createSocketSend(&socketSend);
+  int sock_fd;
+  createSocket(&sock_fd);
   sockaddr_in lastCon{};
 
   // std::thread socketThreadListen(&SocketHelper::run, sh, &run, SLAVE);
@@ -989,7 +937,7 @@ void SocketHelper::runSlave(const bool *run) {
     // size_t n = read(socket2, buffer, BUFFER_LEN-1);
     sockaddr cli_addr_sock{};
     socklen_t cli_len = sizeof(cli_addr_sock);
-    ssize_t n = recvfrom(socketRecv, buffer, BUFFER_LEN + sizeof(Packet) - 1, 0,
+    ssize_t n = recvfrom(sock_fd, buffer, BUFFER_LEN + sizeof(Packet) - 1, 0,
                          (struct sockaddr *)&cli_addr_sock, &cli_len);
 
     if (n < 1) {
@@ -1014,13 +962,13 @@ void SocketHelper::runSlave(const bool *run) {
     if (seqNr != (uint32_t)-1) {
       auto ack = new ACK{};
       ack->sequenceNumber = seqNr;
-      send(socketSend, ack, sizeof(ACK), 0);
+      send(sock_fd, ack, sizeof(ACK), 0);
     }
     checkFinishedTransmission();
   }
 
   // closing socket
-  close(socketRecv);
+  close(sock_fd);
 }
 
 /**
