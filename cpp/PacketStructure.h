@@ -21,7 +21,8 @@
 /**
  * structs for the packets
  */
-#pragma pack(1)
+// TODO enable for JAVA
+// #pragma pack(1)
 typedef struct {
   uint16_t transmissionId;
   uint32_t sequenceNumber;
@@ -63,13 +64,13 @@ enum ACK_NAK_VERSION { ACK_VERSION, NAK_VERSION };
 typedef struct ACK {
   uint8_t version = ACK_VERSION;
   uint32_t sequenceNumber;
-};
+} ACK;
 
 // NAK message; answer when paket didn't arrive
 typedef struct NAK {
   uint8_t version = NAK_VERSION;
   uint32_t sequenceNumber;
-};
+} NAK;
 
 inline bool operator<(Packet &a, Packet &b) {
   return a.packetHeader.sequenceNumber < b.packetHeader.sequenceNumber;

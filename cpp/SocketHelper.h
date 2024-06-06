@@ -15,7 +15,7 @@
 #include <sys/socket.h>
 #include <variant>
 
-typedef struct {
+typedef struct SlidingWindow {
   uint8_t size = MIN_SLIDING_WINDOW_SIZE;
   uint32_t latestAcknoledgedPacket = (uint32_t)-1;
   uint32_t latestSentPacket = 0;
@@ -23,7 +23,7 @@ typedef struct {
   // std::vector<uint32_t> ackPackets;
 } SlidingWindow;
 
-typedef struct {
+typedef struct OutgoingPackets {
   StartPacket *startPacket;
   EndPacket *endPacket;
   // vector with all packets of the transmission
@@ -65,9 +65,9 @@ private:
   static bool checkCorrectnessOfTransmission(Transmission *t);
 
   bool pushToPacketQueue(Packet *packet);
-  bool pushToIncomingQueue(char *buffer, ssize_t len);
+  uint32_t pushToIncomingQueue(char *buffer, ssize_t len);
 
-  void createSocketRecv(int *socket1);
+  void createSocketRecv(int *socket1, sockaddr_in *sockInfo);
   void createSocketSend(int *socket1);
 
   void runMaster();

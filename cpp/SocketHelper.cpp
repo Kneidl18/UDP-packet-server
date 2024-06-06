@@ -399,10 +399,10 @@ bool SocketHelper::pushToPacketQueue(Packet *packet) {
  * @param len
  * @return true if success, false if fail
  */
-bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len) {
+uint32_t SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len) {
   if (len < sizeof(PacketHeader))
     // packets seems to be short...
-    return false;
+    return (uint32_t)-1;
 
   // check if there is an open transmission existing in the transmission vector
   for (auto i : incomingTransmission) {
@@ -418,7 +418,8 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len) {
 
     // packet is of this transmission, adding it
     // separating last packet from normal packet
-    auto incoming = reinterpret_cast<PacketHeader *>(buffer)->sequenceNumber;
+    auto incomingSeqNr =
+        reinterpret_cast<PacketHeader *>(buffer)->sequenceNumber;
     if (packet->sequenceNumberMax ==
         reinterpret_cast<PacketHeader *>(buffer)->sequenceNumber) {
       auto *ep = new EndPacket{};
@@ -442,7 +443,7 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len) {
     // reset time to keep the transmission open, as a new packet arrived
     i->lastPacketRecvTime = std::chrono::system_clock::now();
     i->transmissionSize += len;
-    return true;
+    return incomingSeqNr;
   }
 
   // if the packet wasn't added to an existing transmission, it ought
@@ -475,7 +476,7 @@ bool SocketHelper::pushToIncomingQueue(char *buffer, ssize_t len) {
 
   // push the transmission to the transmission vector
   incomingTransmission.push_back(t);
-  return true;
+  return sp->packetHeader.sequenceNumber;
 }
 
 std::string convertNumberToPrettyPrintBytes(double a) {
@@ -675,6 +676,11 @@ void SocketHelper::createSocketSend(int *socket1) {
     con = connect(*socket1, (struct sockaddr *)dstIpAddr, sizeof(sockaddr_in));
   }
 
+  if(bind(*socket1, (struct sockaddr *)&dstIpAddr, sizeof(sockaddr_in)) < 0){
+      std::cerr << "ERROR on binding" << std::endl;
+      exit(1);
+  }
+
   if (con < 0) {
     std::cerr << "error connecting to socket" << std::endl;
     exit(1);
@@ -685,7 +691,7 @@ void SocketHelper::createSocketSend(int *socket1) {
  * create a socket for receiving
  * @param socket1 pointer to socker number (being replaced)
  */
-void SocketHelper::createSocketRecv(int *socket1) {
+void SocketHelper::createSocketRecv(int *socket1, sockaddr_in *sockInfo) {
   // create a socket:
   // socket(int domain, int type, int protocol)
   *socket1 = socket(AF_INET, SOCK_DGRAM, 0);
@@ -697,11 +703,15 @@ void SocketHelper::createSocketRecv(int *socket1) {
   // clear address structure
   bzero((char *)&serv_addr, sizeof(serv_addr));
 
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = INADDR_ANY;
-  serv_addr.sin_port = htons(PORT_NUMBER);
+  if (sockInfo == nullptr) {
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(PORT_NUMBER);
+  } else {
+    memcpy(&serv_addr, sockInfo, sizeof(sockaddr_in));
+  }
 
-  if (dstIpAddr == nullptr) {
+  if (dstIpAddr == nullptr || sockInfo != nullptr) {
     if (bind(*socket1, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
       std::cerr << "ERROR on binding" << std::endl;
       exit(1);
@@ -764,12 +774,11 @@ void SocketHelper::readAckNak(int socket, SlidingWindow *slidingWindow) {
     }
 
     // if there was a NAK or ACK incoming
-    if (n != 0) {
+    if (n != 0 && n != -1) {
       // FIXME check if ACK/NAK is complete
       uint8_t version = buffer[0];
       ACK *ack;
       NAK *nak;
-      std::__wrap_iter<Packet **> p;
       switch (version) {
 
       // ACK
@@ -786,13 +795,12 @@ void SocketHelper::readAckNak(int socket, SlidingWindow *slidingWindow) {
           for (uint32_t i = slidingWindow->latestAcknoledgedPacket;
                i <= ack->sequenceNumber; i++) {
 
-            p = std::find(outgoingPackets->packets.begin(),
-                          outgoingPackets->packets.end(), i);
-
-            if (p != outgoingPackets->packets.end())
-              outgoingPackets->packetsToSend.push(*p);
-            else
-              std::cerr << "couldn't find packet by sequence number: " << ack;
+            for (auto item : outgoingPackets->packets) {
+              if (item->packetHeader.sequenceNumber == i) {
+                outgoingPackets->packetsToSend.push(item);
+                break;
+              }
+            }
           }
 
           break;
@@ -804,13 +812,16 @@ void SocketHelper::readAckNak(int socket, SlidingWindow *slidingWindow) {
         checkSlidingWindowSize(&slidingWindow->size);
 
         // push all packets that fit into the sliding window
+        // TODO change this O(n^2) to O(n). should be pretty easy but no time rn
         for (uint32_t i = slidingWindow->latestAcknoledgedPacket + 1;
              i <= slidingWindow->latestAcknoledgedPacket + slidingWindow->size;
              i++) {
-          p = std::find(outgoingPackets->packets.begin(),
-                        outgoingPackets->packets.end(), i);
-          if (p != outgoingPackets->packets.end())
-            outgoingPackets->packetsToSend.push(*p);
+          for (auto item : outgoingPackets->packets) {
+            if (item->packetHeader.sequenceNumber == i) {
+              outgoingPackets->packetsToSend.push(item);
+              break;
+            }
+          }
         }
 
         if (verboseOutput)
@@ -824,13 +835,12 @@ void SocketHelper::readAckNak(int socket, SlidingWindow *slidingWindow) {
         if (verboseOutput)
           std::cout << "NAK received: " << *nak << std::endl;
 
-        p = std::find(outgoingPackets->packets.begin(),
-                      outgoingPackets->packets.end(), nak->sequenceNumber);
-
-        if (p != outgoingPackets->packets.end())
-          outgoingPackets->packetsToSend.push(*p);
-        else
-          std::cerr << "couldn't find packet by sequence number: " << ack;
+        for (auto item : outgoingPackets->packets) {
+          if (item->packetHeader.sequenceNumber == nak->sequenceNumber) {
+            outgoingPackets->packetsToSend.push(item);
+            break;
+          }
+        }
 
         slidingWindow->size -= 1;
 
@@ -847,7 +857,7 @@ void SocketHelper::readAckNak(int socket, SlidingWindow *slidingWindow) {
         break;
       }
     }
-  } while (n != 0);
+  } while (n != 0 && n != -1);
 }
 
 /**
@@ -856,9 +866,16 @@ void SocketHelper::readAckNak(int socket, SlidingWindow *slidingWindow) {
 void SocketHelper::runMaster() {
   int socketSend, socketRecv;
   createSocketSend(&socketSend);
-  createSocketRecv(&socketRecv);
 
-  auto *slidingWindow = new SlidingWindow{};
+  struct sockaddr_in myAddr {};
+  socklen_t len = sizeof(sockaddr_in);
+  bzero(&myAddr, sizeof(sockaddr_in));
+  send(socketSend, "", 0, 0);
+  int test = getsockname(socketSend, (struct sockaddr *)&myAddr, &len);
+  // std::cout << ntohs(myAddr.sin_port) << std::endl;
+  // createSocketRecv(&socketRecv, &myAddr);
+
+  auto slidingWindow = new SlidingWindow{};
 
   if (verboseOutput && dstIpAddr != nullptr) {
     std::cout << "sending packet to: addr->" << inet_ntoa(dstIpAddr->sin_addr);
@@ -958,8 +975,11 @@ void SocketHelper::runMaster() {
  * @param run receive as long as true
  */
 void SocketHelper::runSlave(const bool *run) {
-  int socket1;
-  createSocketRecv(&socket1);
+  int socketRecv, socketSend;
+  createSocketRecv(&socketRecv, nullptr);
+  socklen_t len = sizeof(sockaddr_in);
+  getsockname(socketRecv, (sockaddr *)dstIpAddr, &len);
+  createSocketSend(&socketSend);
   sockaddr_in lastCon{};
 
   // std::thread socketThreadListen(&SocketHelper::run, sh, &run, SLAVE);
@@ -969,7 +989,7 @@ void SocketHelper::runSlave(const bool *run) {
     // size_t n = read(socket2, buffer, BUFFER_LEN-1);
     sockaddr cli_addr_sock{};
     socklen_t cli_len = sizeof(cli_addr_sock);
-    ssize_t n = recvfrom(socket1, buffer, BUFFER_LEN + sizeof(Packet) - 1, 0,
+    ssize_t n = recvfrom(socketRecv, buffer, BUFFER_LEN + sizeof(Packet) - 1, 0,
                          (struct sockaddr *)&cli_addr_sock, &cli_len);
 
     if (n < 1) {
@@ -990,12 +1010,17 @@ void SocketHelper::runSlave(const bool *run) {
 
     // msg comes in multiple goes
     // have to concatenate messages
-    pushToIncomingQueue(buffer, n);
+    int seqNr = pushToIncomingQueue(buffer, n);
+    if (seqNr != (uint32_t)-1) {
+      auto ack = new ACK{};
+      ack->sequenceNumber = seqNr;
+      send(socketSend, ack, sizeof(ACK), 0);
+    }
     checkFinishedTransmission();
   }
 
   // closing socket
-  close(socket1);
+  close(socketRecv);
 }
 
 /**
