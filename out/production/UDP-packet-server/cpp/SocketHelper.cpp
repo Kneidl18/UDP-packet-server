@@ -719,6 +719,7 @@ void SocketHelper::runMaster(){
 
                     if (verboseOutput)
                         std::cout << "packet sent " << n << " bytes" << std::endl;
+                    usleep(100);
 
                     auto *p = reinterpret_cast<Packet *> (arg);
                     // delete p->data;

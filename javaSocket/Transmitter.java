@@ -16,11 +16,12 @@ import java.util.Random;
 public class Transmitter {
 
     private static final int MAX_PACKET_SIZE = 9000; // 9 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//IMG_6064.MOV/";
+    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//IMG_6064(2).MOV/";
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3004;
     private static IOException IllegalArgumentException;
     private static final Random rand = new Random();
+    private static final int TIMEOUT = 2000;
 
     public static void main(String[] args) {
         try {
@@ -102,12 +103,24 @@ public class Transmitter {
             System.arraycopy(buffer, 0, data, 6, bytesRead); // kopiere buffer in data[]
 
             packet = new DatagramPacket(data, data.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
-            socket.send(packet);  // sende paket
-            System.out.println(sequenceNumber /*+ (int) (fileSize/MAX_PACKET_SIZE)*/);
 
+            boolean acknowledged = false;
+            while (!acknowledged) {
+                socket.send(packet);
+                try {
+                    socket.setSoTimeout(TIMEOUT);
+                    socket.receive(packet);  // Bestätigung abwarten (2 sek. --> das ist das TIMEOUT
+                    acknowledged = true;
+                } catch (SocketTimeoutException e) {
+                    System.out.println("Timeout, sende das Paket erneut: " + sequenceNumber);
+                    acknowledged = false;
+                }
+            }
+
+            //socket.send(packet);  // sende paket
+            System.out.println(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE));
             // Update MD5 checksum
             md.update(buffer, 0, bytesRead);
-
             sequenceNumber++;
         }
 

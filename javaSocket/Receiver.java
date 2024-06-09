@@ -40,6 +40,10 @@ public class Receiver{
             packet = new DatagramPacket(buffer, buffer.length);
             socket.receive(packet);
 
+            byte[] ackPacketData = "ACK".getBytes(StandardCharsets.UTF_8);
+            DatagramPacket ackPacket = new DatagramPacket(ackPacketData, ackPacketData.length, packet.getAddress(), packet.getPort());
+            socket.send(ackPacket);
+
             byte[] receivedData = packet.getData();
             int length = packet.getLength();
             sequenceNumber = bytesToInt(receivedData, 2);
@@ -79,7 +83,7 @@ public class Receiver{
 
         byte[] mdBytes = md.digest();
         System.out.println("Received MD5 checksum: " + bytesToHex(mdBytes));
-        System.out.println("Dateigröße: " + (double) fileSize / 1000.0 + " Kb"); //Byte
+        System.out.println("Dateigröße: " + (double) fileSize / 1000.0 + " Kb");
         System.out.println("Gesamte Übertragungszeit: " + (double) (endTime - startTime)/1000.0 + " sek.");
 
         double dataRateMBps = (((double) fileSize / 1000000.0) / (double) (endTime - startTime)) * 1000.0;

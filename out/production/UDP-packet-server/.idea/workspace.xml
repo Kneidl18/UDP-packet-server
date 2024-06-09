@@ -4,15 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6b1c9cfc-8820-40dc-a733-7bcb18b36d42" name="Changes" comment="data rate added">
+    <list default="true" id="6b1c9cfc-8820-40dc-a733-7bcb18b36d42" name="Changes" comment="besseres ausgabeformat">
+      <change beforePath="$PROJECT_DIR$/javaSocket/Receiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/javaSocket/Receiver.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/javaSocket/Transmitter.java" beforeDir="false" afterPath="$PROJECT_DIR$/javaSocket/Transmitter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nvs24.ps.blatt3-ab2-1.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/nvs24.ps.blatt3-ab2-1.pdf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/cpp/PacketStructure.h" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/cpp/PacketStructure.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/cpp/SocketHelper.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/cpp/SocketHelper.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/javaSocket/Receiver.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/javaSocket/Receiver.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/javaSocket/Transmitter.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/javaSocket/Transmitter.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/UDP-packet-server/nvs24.ps.blatt3-ab2-1.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/UDP-packet-server/nvs24.ps.blatt3-ab2-1.pdf" afterDir="false" />
     </list>
+    <list id="1819a7be-f527-4cca-839c-a113e9c4aff8" name="Changes by andreas" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -28,6 +28,20 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;PLUSAlexander&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="8719ebd1-14e0-4c4c-a69b-aa6445c32242" />
+        <option name="url" value="https://github.com/Kneidl18/UDP-packet-server.git" />
+      </UrlAndAccount>
+    </option>
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -39,18 +53,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;Application.Receiver.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestExecutor.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Transmitter.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Public/Documents/UDP-packet-server&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "Application.Receiver.executor": "Run",
+    "Application.Test.executor": "Run",
+    "Application.TestExecutor.executor": "Run",
+    "Application.Transmitter.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Startklar/Dokumente/Projektaufgabe_1"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Application.Receiver">
     <configuration name="Receiver" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="javaSocket.Receiver" />
@@ -94,8 +109,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Application.Receiver" />
-        <item itemvalue="Application.TestExecutor" />
         <item itemvalue="Application.Transmitter" />
+        <item itemvalue="Application.TestExecutor" />
       </list>
     </recent_temporary>
   </component>
@@ -306,12 +321,26 @@
       <option name="project" value="LOCAL" />
       <updated>1713178892708</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="md updated">
+      <option name="closed" value="true" />
+      <created>1713272997849</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1713272997849</updated>
+    </task>
+    <task id="LOCAL-00028" summary="besseres ausgabeformat">
+      <option name="closed" value="true" />
+      <created>1713281218108</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1713281218108</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Transmitter &amp; Receiver added" />
-    <MESSAGE value="Grundstruktur hergestellt" />
     <MESSAGE value="annäherung an vorgaben" />
     <MESSAGE value="first packet structure added" />
     <MESSAGE value="last packet structure added" />
@@ -335,7 +364,9 @@
     <MESSAGE value="seems to work" />
     <MESSAGE value="time added" />
     <MESSAGE value="data rate added" />
-    <option name="LAST_COMMIT_MESSAGE" value="data rate added" />
+    <MESSAGE value="md updated" />
+    <MESSAGE value="besseres ausgabeformat" />
+    <option name="LAST_COMMIT_MESSAGE" value="besseres ausgabeformat" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
