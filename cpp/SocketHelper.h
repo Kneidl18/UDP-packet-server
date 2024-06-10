@@ -67,7 +67,7 @@ private:
   bool pushToPacketQueue(Packet *packet);
   uint32_t pushToIncomingQueue(char *buffer, ssize_t len);
 
-  void createSocket(int *socket1);
+  void createSocket(int *socket1, sockaddr_in *dstIpAddr);
 
   void runMaster();
   void runSlave(const bool *run);

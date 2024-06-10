@@ -657,7 +657,7 @@ bool SocketHelper::msgOut() const { return msgSend; }
  * create a socket
  * @param socket pointer to socket number
  */
-void SocketHelper::createSocket(int *socket_fd) {
+void SocketHelper::createSocket(int *socket_fd, sockaddr_in *dstIpAddr) {
   // creating socket
   // specifying address
   sockaddr_in serverAddress{};
@@ -667,20 +667,32 @@ void SocketHelper::createSocket(int *socket_fd) {
 
   // getaddrinfo(NULL, PORT, &hints, &p);
 
-  int tmp_sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (bind(tmp_sock_fd, (struct sockaddr *)&serverAddress,
-           sizeof(sockaddr_in)) < 0) {
-    std::cerr << "ERROR on binding" << std::endl;
-    exit(1);
+  *socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (dstIpAddr == nullptr) {
+    if (bind(*socket_fd, (struct sockaddr *)&serverAddress,
+             sizeof(sockaddr_in)) < 0) {
+      std::cerr << "ERROR on binding" << std::endl;
+      exit(1);
+    }
+    if (verboseOutput)
+      std::cout << "bound to standard socket" << std::endl;
+  } else {
+    if (bind(*socket_fd, (struct sockaddr *)dstIpAddr, sizeof(sockaddr_in)) <
+        0) {
+      std::cerr << "ERROR on binding" << std::endl;
+      exit(1);
+    }
+    if (verboseOutput)
+      std::cout << "bould to selected socket" << std::endl;
   }
 
-  listen(tmp_sock_fd, 5);
   fcntl(*socket_fd, F_SETFL, O_NONBLOCK);
 
   socklen_t sin_size = sizeof(sockaddr_in);
-  *socket_fd = accept(tmp_sock_fd, (struct sockaddr *)&dstIpAddr, &sin_size);
+  // *socket_fd = accept(tmp_sock_fd, (struct sockaddr *)&serverAddress,
+  // &sin_size);
   if (*socket_fd < 0) {
-    std::cout << "error on accept" << std::endl;
+    std::cerr << "error on accept" << std::endl;
     exit(1);
   }
 }
@@ -816,15 +828,7 @@ void SocketHelper::readAckNak(int socket, SlidingWindow *slidingWindow) {
  */
 void SocketHelper::runMaster() {
   int sock_fd;
-  createSocket(&sock_fd);
-
-  struct sockaddr_in myAddr {};
-  socklen_t len = sizeof(sockaddr_in);
-  bzero(&myAddr, sizeof(sockaddr_in));
-  send(sock_fd, "", 0, 0);
-  int test = getsockname(sock_fd, (struct sockaddr *)&myAddr, &len);
-  // std::cout << ntohs(myAddr.sin_port) << std::endl;
-  // createSocketRecv(&socketRecv, &myAddr);
+  createSocket(&sock_fd, this->dstIpAddr);
 
   auto slidingWindow = new SlidingWindow{};
 
@@ -866,6 +870,13 @@ void SocketHelper::runMaster() {
                        sizeof(uint32_t) + sizeof(PacketHeader) +
                            outgoingPackets->startPacket->nameLen,
                        0);
+
+      if (n < 0) {
+        std::cerr << "couldn't send start packet" << std::endl;
+        perror("send");
+        close(sock_fd);
+        exit(1);
+      }
 
       if (verboseOutput)
         std::cout << "start packet sent " << n << " bytes" << std::endl;
@@ -927,7 +938,7 @@ void SocketHelper::runMaster() {
  */
 void SocketHelper::runSlave(const bool *run) {
   int sock_fd;
-  createSocket(&sock_fd);
+  createSocket(&sock_fd, this->dstIpAddr);
   sockaddr_in lastCon{};
 
   // std::thread socketThreadListen(&SocketHelper::run, sh, &run, SLAVE);
