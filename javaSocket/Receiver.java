@@ -40,9 +40,7 @@ public class Receiver{
             packet = new DatagramPacket(buffer, buffer.length);
             socket.receive(packet);
 
-            byte[] ackPacketData = "ACK".getBytes(StandardCharsets.UTF_8);
-            DatagramPacket ackPacket = new DatagramPacket(ackPacketData, ackPacketData.length, packet.getAddress(), packet.getPort());
-            socket.send(ackPacket);
+
 
             byte[] receivedData = packet.getData();
             int length = packet.getLength();
