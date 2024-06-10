@@ -104,7 +104,24 @@ public class Transmitter {
 
             packet = new DatagramPacket(data, data.length, InetAddress.getByName(DESTINATION_IP), DESTINATION_PORT);
 
+            boolean acknowledged = false;
+            while (!acknowledged) {
+                socket.send(packet);
+                try {
+                    socket.setSoTimeout(TIMEOUT);
+                    socket.receive(packet);  // Bestätigung abwarten (2 sek. --> das ist das TIMEOUT
+                    acknowledged = true;
+                } catch (SocketTimeoutException e) {
+                    System.out.println("Timeout, sende das Paket erneut: " + sequenceNumber);
+                    acknowledged = false;
+                }
+            }
 
+            //socket.send(packet);  // sende paket
+            System.out.println(sequenceNumber + (int) (fileSize/MAX_PACKET_SIZE));
+            // Update MD5 checksum
+            md.update(buffer, 0, bytesRead);
+            sequenceNumber++;
         }
 
 
