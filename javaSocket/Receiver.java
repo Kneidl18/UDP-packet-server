@@ -11,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import static java.lang.Integer.reverseBytes;
 
 public class Receiver{
-    private static final int MAX_PACKET_SIZE = 9000; // 60 KB max. Paketgröße
+    private static final int MAX_PACKET_SIZE = 16000; // 60 KB max. Paketgröße
     private static final int MAX_PACKET_HEADER_SIZE = 10;
     private static String fileName = null;
     private static final int DESTINATION_PORT = 3004;
