@@ -1,22 +1,19 @@
 package javaSocket;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.lang.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
+import java.io.File;
 
 public class Transmitter {
 
-    private static final int MAX_PACKET_SIZE = 9000; // 9 KB max. Übertragungsgröße pro paket
-    private static final String FILE_NAME = "/C://Users//Startklar//Downloads//IMG_6064(2).MOV/";
+    private static final int MAX_PACKET_SIZE = 1 * 1024; // 1 KB max. Übertragungsgröße pro paket; for testing: 1, 16, 64
+    private static final String FILE_NAME = "./test_500mb.pdf";
     private static final String DESTINATION_IP = "127.0.0.1";
     private static final int DESTINATION_PORT = 3004;
     private static IOException IllegalArgumentException;

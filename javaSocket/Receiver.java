@@ -7,6 +7,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.io.FileOutputStream;
 
 import static java.lang.Integer.reverseBytes;
 
