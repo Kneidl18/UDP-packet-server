@@ -11,6 +11,12 @@
 #include <iostream>
 #include <variant>
 
+#define MAX_DATA_LEN 1000.0
+#define BUFFER_LEN (uint) MAX_DATA_LEN
+
+// millisecond a packet is kept before it's deleted from the vector
+#define PACKET_TIMEOUT 1000
+
 /**
  * structs for the packets
  */
